@@ -341,7 +341,7 @@ class Donation extends StatelessWidget {
                                   height: 10,
                                 ),
                                 Text(
-                                  "PayPal᠄   Bilegt_@live.com",
+                                  "PayPal᠄  zmongolcode@gmail.com",
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.red,
@@ -360,7 +360,7 @@ class Donation extends StatelessWidget {
                                   ),
                                 ),
                                 Image.asset(
-                                  'assets/images/wechatpay.jpg',
+                                  'assets/images/wechatpay.png',
                                   width: 200,
                                   height: 200,
                                 ),
