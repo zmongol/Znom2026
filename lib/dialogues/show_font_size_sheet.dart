@@ -1,9 +1,8 @@
 import 'package:book_app/Component/font_scale.dart';
+import 'package:book_app/core/services/font_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:velocity_x/velocity_x.dart';
-
-import '../Component/MongolFonts.dart';
 
 void showFontSizeDialogue({
   required Function(double) onTap,
@@ -18,8 +17,7 @@ void showFontSizeDialogue({
 class _FontSize extends StatelessWidget {
   final Function(double) onTap;
   final double selectedScale;
-  const _FontSize({Key? key, required this.onTap, required this.selectedScale})
-      : super(key: key);
+  const _FontSize({required this.onTap, required this.selectedScale});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +28,10 @@ class _FontSize extends StatelessWidget {
           20.heightBox,
           Text(
             "ᡥᡭᡬᢔᡭᡬᡨ ᡭᡧ ᢊᡪᢎᢛᡬᡫᡨ ᢔᡭᡪᢊᡱᡱᡭᡪᡪᡳ",
-            style: TextStyle(fontFamily: MongolFonts.z52ordostig, fontSize: 20),
+            style: TextStyle(
+              fontFamily: Get.find<FontService>().fontFamily.value,
+              fontSize: 18,
+            ),
           ).centered(),
           20.heightBox,
           ListTile(
@@ -45,7 +46,9 @@ class _FontSize extends StatelessWidget {
                 : null,
             title: Text(
               "ᢘᡭᢎᡳ",
-              style: TextStyle(fontFamily: MongolFonts.z52ordostig),
+              style: TextStyle(
+                  fontFamily: Get.find<FontService>().fontFamily.value,
+                  fontSize: 16),
             ),
           ),
           ListTile(
@@ -60,7 +63,9 @@ class _FontSize extends StatelessWidget {
                 : null,
             title: Text(
               "ᢘᡭᢎᢙᡧ",
-              style: TextStyle(fontFamily: MongolFonts.z52ordostig),
+              style: TextStyle(
+                  fontFamily: Get.find<FontService>().fontFamily.value,
+                  fontSize: 16),
             ),
           ),
           ListTile(
@@ -75,7 +80,9 @@ class _FontSize extends StatelessWidget {
                 : null,
             title: Text(
               "ᡳᡪᢉᡨ",
-              style: TextStyle(fontFamily: MongolFonts.z52ordostig),
+              style: TextStyle(
+                  fontFamily: Get.find<FontService>().fontFamily.value,
+                  fontSize: 16),
             ),
           ),
           20.heightBox,

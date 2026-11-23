@@ -1,17 +1,17 @@
 import 'package:book_app/models/books/book_chapter_model.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:mongol/mongol.dart';
-
-import '../Component/MongolFonts.dart';
+import 'package:book_app/core/services/font_service.dart';
 
 class ChapterCard extends StatelessWidget {
   final BookChapter chapter;
   final Function() press;
   const ChapterCard({
-    Key? key,
+    super.key,
     required this.chapter,
     required this.press,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,10 @@ class ChapterCard extends StatelessWidget {
                           color: isDark
                               ? Colors.white.withOpacity(0.95)
                               : Colors.black,
-                          fontFamily: MongolFonts.z52ordostig)),
+                          fontFamily:
+                              Get.find<FontService>().fontFamily.value.isEmpty
+                                  ? null
+                                  : Get.find<FontService>().fontFamily.value)),
                 ),
               ),
             ),

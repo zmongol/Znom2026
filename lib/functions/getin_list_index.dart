@@ -1,10 +1,10 @@
 int getinListindex(num index, int length) {
-  num _out = 0;
+  num out = 0;
   if (index >= length) {
-    _out = index - (index ~/ length) * length;
+    out = index - (index ~/ length) * length;
   } else {
-    _out = index;
+    out = index;
   }
 
-  return _out.toInt();
+  return out.toInt();
 }

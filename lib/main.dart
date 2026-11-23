@@ -4,6 +4,7 @@ import 'package:book_app/Component/app_theme.dart';
 import 'package:book_app/consttants.dart';
 import 'package:book_app/services/book_sync_service.dart';
 // import 'package:book_app/global_controllers/ads_ctrl.dart';  // Disabled
+import 'package:book_app/core/services/font_service.dart';
 import 'package:book_app/global_controllers/books_ctrl.dart';
 import 'package:book_app/screens/home_screen.dart';
 import 'package:book_app/widgets/rounded_button.dart';
@@ -18,6 +19,10 @@ void main() async {
   // MobileAds.instance.initialize();  // Disabled
   _putCtrls();
   runApp(MyApp());
+  // Start the Mini FTP book sync once the app is on screen.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    BookSyncService.startAutoUpdate();
+  });
 }
 
 final _book = FindCtrl.book;
@@ -29,7 +34,7 @@ class MyApp extends StatelessWidget {
     return Obx(
       () => GetMaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Book App',
+        title: 'Znom',
         theme: appLightTheme(fontFamily: _book.fontFamily.value).copyWith(
           textTheme: ThemeData(brightness: Brightness.light).textTheme.apply(
                 displayColor: kBlackColor,
@@ -116,6 +121,7 @@ class WelcomeScreen extends StatelessWidget {
 }
 
 void _putCtrls() {
+  Get.put(FontService());
   Get.put(BookSyncService());
   Get.put(BookCtrl());
   // Get.put(AppAdsCtrl());  // Disabled

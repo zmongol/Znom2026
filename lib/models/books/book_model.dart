@@ -44,7 +44,9 @@ class Book {
         image: json["image"] ?? "",
         auth: json["auth"] ?? "",
         content: json["content"] ?? "",
-        rating: json["rating"] ?? 0,
+        rating: (json["rating"] is num)
+            ? (json["rating"] as num).toDouble()
+            : double.tryParse('${json["rating"]}') ?? 0,
       );
 
   // Helper to get local image path

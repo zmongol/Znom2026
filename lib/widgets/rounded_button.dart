@@ -7,14 +7,14 @@ class RoundedButton extends StatelessWidget {
   final double horizontalPadding;
   final double fontSize;
 
-  RoundedButton({
-    Key? key,
+  const RoundedButton({
+    super.key,
     this.text,
     this.press,
     this.verticalPadding = 16,
     this.horizontalPadding = 30,
     this.fontSize = 16,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

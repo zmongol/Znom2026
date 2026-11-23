@@ -1,5 +1,5 @@
-import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/models/basic/mongol_font_family_model.dart';
+import 'package:book_app/core/services/font_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:velocity_x/velocity_x.dart';
@@ -18,8 +18,7 @@ class _FontFamily extends StatelessWidget {
   final Function(MongolFamily) onTap;
   final String selectedFamily;
   const _FontFamily(
-      {Key? key, required this.onTap, required this.selectedFamily})
-      : super(key: key);
+      {required this.onTap, required this.selectedFamily});
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +31,10 @@ class _FontFamily extends StatelessWidget {
             20.heightBox,
             Text(
               "ᢘᡬᡬᡨ ᢔᡭᢑᡬᡪᡪᡳ",
-              style:
-                  TextStyle(fontFamily: MongolFonts.z52ordostig, fontSize: 20),
+              style: TextStyle(
+                fontFamily: Get.find<FontService>().fontFamily.value,
+                fontSize: 18,
+              ),
             ).centered(),
             20.heightBox,
             ...MongolFamily.fetchList().map(

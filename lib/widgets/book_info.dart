@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/screens/reading_screen.dart';
 import 'package:flutter/material.dart';
@@ -14,17 +15,17 @@ class BookInfo extends StatelessWidget {
   final _bookCtrl = Get.find<BookCtrl>();
 
   BookInfo({
-    Key? key,
+    super.key,
     this.size,
     required this.book,
-  }) : super(key: key);
+  });
 
   final Size? size;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return SizedBox(
       height: 280,
       child: Row(
         children: [
@@ -47,7 +48,7 @@ class BookInfo extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                    ? MongolFonts.z52ordostig
+                    ? null
                     : _bookCtrl.fontFamily.value,
                 color:
                     isDark ? Colors.white.withOpacity(0.7) : kLightBlackColor,
@@ -100,7 +101,7 @@ class BookInfo extends StatelessWidget {
                               style: TextStyle(
                                   color: Colors.white,
                                   fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                                      ? MongolFonts.z52ordostig
+                                      ? null
                                       : _bookCtrl.fontFamily.value)),
                         ),
                       ),
@@ -113,14 +114,8 @@ class BookInfo extends StatelessWidget {
           Expanded(
               flex: 1,
               child: Container(
-                // width: 200,
                 color: Colors.transparent,
-                child: Image.asset(
-                  book.image,
-                  height: double.infinity,
-                  alignment: Alignment.topRight,
-                  fit: BoxFit.fitWidth,
-                ),
+                child: _bookCoverImage(book),
               )),
         ],
       ),
@@ -217,3 +212,34 @@ class BookInfo extends StatelessWidget {
     // );
   }
 }
+
+/// Returns the book cover image: local file (FTP download) preferred over asset.
+Widget _bookCoverImage(Book book) {
+  if (book.localImagePath != null && book.localImagePath!.isNotEmpty) {
+    return Image.file(
+      File(book.localImagePath!),
+      height: double.infinity,
+      alignment: Alignment.topRight,
+      fit: BoxFit.fitWidth,
+      errorBuilder: (_, __, ___) => _bookImagePlaceholder(),
+    );
+  }
+  // Only use Image.asset for bundled assets — FTP books have bare filenames
+  if (book.image.isNotEmpty && book.image.startsWith('assets/')) {
+    return Image.asset(
+      book.image,
+      height: double.infinity,
+      alignment: Alignment.topRight,
+      fit: BoxFit.fitWidth,
+      errorBuilder: (_, __, ___) => _bookImagePlaceholder(),
+    );
+  }
+  return _bookImagePlaceholder();
+}
+
+Widget _bookImagePlaceholder() => Container(
+      color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
+      child: const Center(
+        child: Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7)),
+      ),
+    );

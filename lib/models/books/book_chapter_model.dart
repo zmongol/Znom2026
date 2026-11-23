@@ -19,6 +19,10 @@ class BookChapter {
   String? content;
   String? releasedate;
 
+  // Lazily-computed lowercase cache — avoids repeated toLowerCase() per search
+  String? _lowerContent;
+  String get lowerContent => _lowerContent ??= (content ?? '').toLowerCase();
+
 //fetchList
   static List<BookChapter> fetchList(dynamic data) {
     if (data == null) return [];
@@ -34,7 +38,9 @@ class BookChapter {
         title: json["title"] ?? "",
         image: json["image"] ?? "",
         auth: json["auth"] ?? "",
-        rating: json["rating"] ?? 0,
+        rating: (json["rating"] is num)
+            ? (json["rating"] as num).toDouble()
+            : double.tryParse('${json["rating"]}') ?? 0,
         chapterNumber: json["chapterNumber"] ?? 0,
         chapterTitle: json["chapterTitle"] ?? "",
         content: json["content"] ?? "",

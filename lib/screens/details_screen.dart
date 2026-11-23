@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:book_app/Component/MongolFonts.dart';
+import 'package:book_app/core/constants/app_colors.dart';
+import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/screens/reading_screen.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ final _bookCtrl = FindCtrl.book;
 class DetailsScreen extends StatelessWidget {
   final Book book;
 
-  DetailsScreen({required this.book});
+  const DetailsScreen({super.key, required this.book});
 
   @override
   Widget build(BuildContext context) {
@@ -31,16 +32,15 @@ class DetailsScreen extends StatelessWidget {
           () => Text(book.title,
               style: TextStyle(
                   fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                      ? MongolFonts.z52ordostig
+                      ? null
                       : _bookCtrl.fontFamily.value,
                   color: Colors.white)),
         ),
-        backgroundColor: isDark
-            ? Theme.of(context).cardColor
-            : Color.fromARGB(255, 164, 166, 168),
+        backgroundColor: AppColors.primary,
         actions: [
           IconButton(
-            icon: Icon(Icons.coffee), //Go to Donation page
+            icon: const Icon(Icons.favorite,
+                color: Colors.white), //Go to Donation page
             onPressed: () {
               Navigator.push(
                 context,
@@ -112,7 +112,7 @@ class DetailsScreen extends StatelessWidget {
                                       book: book,
                                       chapterIndex: i,
                                     ),
-                                  ), //Go to Donation page
+                                  ),
                                 );
                               },
                             ),
@@ -129,6 +129,8 @@ class DetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   SizedBox(height: 40),
+                  // ── Continue Reading banner ──────────────────────────────
+                  _ContinueReadingBanner(book: book),
                   Text(
                     'Featured Books',
                     style: TextStyle(
@@ -244,7 +246,7 @@ class DetailsScreen extends StatelessWidget {
                   book.title,
                   style: TextStyle(
                     fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                        ? MongolFonts.z52dardastig
+                        ? null
                         : _bookCtrl.fontFamily.value,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -298,6 +300,92 @@ class DetailsScreen extends StatelessWidget {
           Icons.book,
           size: 40,
           color: Color(0xFF6C5CE7),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shows a "Continue Reading" card when the user has saved progress for [book].
+/// Tapping it resumes the exact chapter and scroll position.
+class _ContinueReadingBanner extends StatelessWidget {
+  final Book book;
+  const _ContinueReadingBanner({required this.book});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = ReadingProgress.load(book.title);
+    if (progress == null) return const SizedBox.shrink();
+
+    final chapterIndex = progress.$1;
+    final chapterName = (chapterIndex < book.chapters.length)
+        ? (book.chapters[chapterIndex].chapterTitle?.isNotEmpty == true
+            ? book.chapters[chapterIndex].chapterTitle!
+            : book.chapters[chapterIndex].title?.isNotEmpty == true
+                ? book.chapters[chapterIndex].title!
+                : 'Chapter ${chapterIndex + 1}')
+        : 'Chapter ${chapterIndex + 1}';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReadingScreen(
+                  book: book,
+                  chapterIndex: chapterIndex,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.primary.withOpacity(0.2)
+                  : AppColors.primary.withOpacity(0.08),
+              border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.menu_book_rounded,
+                    color: AppColors.primary, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Continue Reading',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                            fontSize: 14,
+                          )),
+                      const SizedBox(height: 2),
+                      Text(
+                        chapterName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios,
+                    size: 16, color: AppColors.primary),
+              ],
+            ),
+          ),
         ),
       ),
     );

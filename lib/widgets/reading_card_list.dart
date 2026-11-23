@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/consttants.dart';
 import 'package:book_app/models/books/book_model.dart';
@@ -15,15 +16,15 @@ class ReadingListCard extends StatelessWidget {
   final Function? pressRead;
 
   const ReadingListCard({
-    Key? key,
+    super.key,
     required this.book,
     this.pressDetails,
     this.pressRead,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final _bookCtrl = Get.find<BookCtrl>();
+    final bookCtrl = Get.find<BookCtrl>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: EdgeInsets.only(left: 24, bottom: 40),
@@ -58,10 +59,7 @@ class ReadingListCard extends StatelessWidget {
                 children: [
                   Column(
                     children: [
-                      Image.asset(
-                        book.image,
-                        width: 100,
-                      ),
+                      _readingCardImage(book),
                       Row(
                         children: <Widget>[
                           IconButton(
@@ -75,16 +73,16 @@ class ReadingListCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Container(
+                  SizedBox(
                     height: 130,
                     child: Obx(
                       () => MongolText(
                         "${book.title}\n",
                         style: TextStyle(
                           fontWeight: FontWeight.normal,
-                          fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                          fontFamily: bookCtrl.fontFamily.value.isEmpty
                               ? MongolFonts.z52dardastig
-                              : _bookCtrl.fontFamily.value,
+                              : bookCtrl.fontFamily.value,
                           fontSize: 22,
                           color: isDark
                               ? Colors.white.withOpacity(0.95)
@@ -107,9 +105,9 @@ class ReadingListCard extends StatelessWidget {
                         () => Text(
                           "ᢘᡭᡳᢚᡫ",
                           style: TextStyle(
-                              fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                              fontFamily: bookCtrl.fontFamily.value.isEmpty
                                   ? MongolFonts.z52xanadutig
-                                  : _bookCtrl.fontFamily.value,
+                                  : bookCtrl.fontFamily.value,
                               color: isDark
                                   ? Colors.white.withOpacity(0.9)
                                   : Colors.black87),
@@ -134,4 +132,25 @@ class ReadingListCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _readingCardImage(Book book) {
+  if (book.localImagePath != null && book.localImagePath!.isNotEmpty) {
+    return Image.file(
+      File(book.localImagePath!),
+      width: 100,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) =>
+          const Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7)),
+    );
+  }
+  if (book.image.isNotEmpty) {
+    return Image.asset(
+      book.image,
+      width: 100,
+      errorBuilder: (_, __, ___) =>
+          const Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7)),
+    );
+  }
+  return const Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7));
 }

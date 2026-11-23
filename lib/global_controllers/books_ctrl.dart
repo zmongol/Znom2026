@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:book_app/core/services/font_service.dart';
+import 'package:book_app/services/book_sync_service.dart';
 import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/Component/app_theme.dart';
 import 'package:book_app/dialogues/show_font_family_sheet.dart';
@@ -9,7 +12,6 @@ import 'package:book_app/models/books/book_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
 
 class BookCtrl extends GetxService {
   var booksList = <Book>[].obs;
@@ -25,11 +27,54 @@ class BookCtrl extends GetxService {
   var fontScale = 1.0.obs;
   var fontFamily = "".obs;
 
+  StreamSubscription<void>? _bookUpdateSub;
+  bool _isLoading = false;
+  bool _pendingReload = false;
+
   @override
   void onInit() {
-    setUps();
-    loadBooks();
     super.onInit();
+    setUps();
+    // Await via async helper so onInit itself stays synchronous
+    _initialLoad();
+
+    // Listen for new books downloaded from FTP backend
+    _bookUpdateSub = BookSyncService.onBooksUpdated.listen((_) {
+      debugPrint('BookCtrl: New books detected from FTP — reloading library');
+      reloadBooks().then((_) {
+        Get.snackbar(
+          'Library Updated',
+          'New books downloaded from server.',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
+      });
+    });
+
+    // Sync with global FontService: react to font changes from Home picker
+    final fs = Get.find<FontService>();
+    ever(fs.fontFamily, (String f) {
+      if (fontFamily.value != f) {
+        fontFamily.value = f;
+        f.boxfontFamily;
+        _updateContentStyle();
+        _refreshTheme();
+      }
+    });
+    // Also push the current FontService value if it differs from local storage
+    if (fs.fontFamily.value.isNotEmpty &&
+        fontFamily.value != fs.fontFamily.value) {
+      fontFamily.value = fs.fontFamily.value;
+      fs.fontFamily.value.boxfontFamily;
+      _updateContentStyle();
+      _refreshTheme();
+    }
+  }
+
+  @override
+  void onClose() {
+    _bookUpdateSub?.cancel();
+    super.onClose();
   }
 
   void setUps() {
@@ -53,8 +98,9 @@ class BookCtrl extends GetxService {
 
   void _updateContentStyle() {
     print(fontFamily.value);
-    final family =
-        fontFamily.value.isEmpty ? MongolFonts.z52ordostig : fontFamily.value;
+    final family = fontFamily.value.isEmpty
+        ? Get.find<FontService>().fontFamily.value
+        : fontFamily.value;
     final scale = fontScale.value <= 0 ? 1 : fontScale.value;
 
     contentStyle.value = TextStyle(
@@ -84,6 +130,8 @@ class BookCtrl extends GetxService {
         Get.back();
         fontFamily.value = val.familyName;
         val.familyName.boxfontFamily;
+        // Push to global FontService so Home picker stays in sync
+        Get.find<FontService>().setFont(val.familyName);
         _updateContentStyle();
         _refreshTheme();
       },
@@ -103,60 +151,124 @@ class BookCtrl extends GetxService {
     appTheme.refresh();
   }
 
+  Future<void> _initialLoad() async {
+    await loadBooks();
+  }
+
   Future<void> loadBooks() async {
-    final booksFiles = await loadBookFiles();
-    if (booksFiles.isEmpty) return;
-    for (var bookfile in booksFiles) {
-      final book = await loadBookJson(bookfile);
+    if (_isLoading) {
+      // FTP may have delivered books while we were already loading — mark for
+      // a retry so the new files are not silently dropped.
+      _pendingReload = true;
+      debugPrint('BookCtrl: loadBooks already in progress, will retry after');
+      return;
+    }
+    _isLoading = true;
+    try {
+      final booksFiles = await loadBookFiles();
+      if (booksFiles.isEmpty) return;
 
-      if (book != null && book["items"] != null) {
-        final dd = await compute<List<dynamic>, Book>(
-            Book.fetch, (book["items"] as List<dynamic>));
+      final List<Book> loaded = [];
+      for (var bookfile in booksFiles) {
+        final book = await loadBookJson(bookfile);
+        if (book != null && book["items"] != null) {
+          final dd = await compute<List<dynamic>, Book>(
+              Book.fetch, (book["items"] as List<dynamic>));
+          if (dd.title.trim().isEmpty) {
+            final fallbackTitle =
+                bookfile.split('/').last.replaceAll('.json', '');
+            dd.title = fallbackTitle;
+            debugPrint(
+                'BookCtrl: empty title fallback to filename "$fallbackTitle"');
+          }
+          for (var i = 0; i < dd.chapters.length; i++) {
+            final ch = dd.chapters[i];
+            if (ch.chapterNumber == null || ch.chapterNumber == 0) {
+              ch.chapterNumber = i + 1;
+            }
+            if ((ch.chapterTitle ?? '').trim().isEmpty) {
+              final fromTitle = (ch.title ?? '').trim();
+              ch.chapterTitle = fromTitle.isNotEmpty
+                  ? fromTitle
+                  : 'Chapter ${ch.chapterNumber}';
+            }
+          }
+          await _checkAndSetLocalImage(dd, bookfile);
+          loaded.add(dd);
+          debugPrint(
+              'BookCtrl: loaded book "${dd.title}" image=${dd.localImagePath ?? dd.image}');
+        }
+      }
 
-        // Check for local downloaded image
-        await _checkAndSetLocalImage(dd, bookfile);
-
-        booksList.add(dd);
-        randombooksList.add(dd);
+      // Deduplicate by title — FTP books are collected first in loadBookFiles()
+      // so the FTP version wins when the same book exists in both assets and FTP.
+      final Set<String> seenTitles = {};
+      final List<Book> deduped = [];
+      for (final b in loaded) {
+        if (seenTitles.add(b.title)) deduped.add(b);
+      }
+      booksList.assignAll(deduped);
+      randombooksList.assignAll(deduped);
+      randombooksList.shuffle();
+    } finally {
+      _isLoading = false;
+      // If a reload was requested while we were loading (e.g. FTP finished),
+      // run it now that the lock is released.
+      if (_pendingReload) {
+        _pendingReload = false;
+        debugPrint('BookCtrl: running deferred reload after FTP update');
+        loadBooks();
       }
     }
-
-    //
-
-    randombooksList.shuffle();
   }
 
   Future<void> _checkAndSetLocalImage(Book book, String bookFilePath) async {
     try {
-      // Get book name from file path
-      String fileName = bookFilePath.split('/').last.replaceAll('.json', '');
-      String imageName = '$fileName.png';
+      // Only FTP-downloaded books have absolute paths
+      if (!bookFilePath.startsWith('/')) return;
 
-      // Check if it's a downloaded file
-      if (bookFilePath.startsWith('/')) {
-        final appDir = await getApplicationDocumentsDirectory();
-        final imagePath = '${appDir.path}/book_images/$imageName';
-        final imageFile = File(imagePath);
+      final String bookDir =
+          bookFilePath.substring(0, bookFilePath.lastIndexOf('/'));
 
-        if (await imageFile.exists()) {
+      // 1. Primary: match by JSON base name — check all three extensions in
+      //    parallel to avoid sequential round-trips for each await.
+      final String jsonBase =
+          bookFilePath.split('/').last.replaceAll('.json', '');
+      const primaryExts = ['.png', '.jpg', '.jpeg'];
+      final primaryPaths =
+          primaryExts.map((e) => '$bookDir/$jsonBase$e').toList();
+      final primaryResults = await Future.wait(
+        primaryPaths.map((p) => File(p).exists()),
+      );
+      final primaryIdx = primaryResults.indexOf(true);
+      if (primaryIdx != -1) {
+        book.setLocalImagePath(primaryPaths[primaryIdx]);
+        debugPrint(
+            'BookCtrl: image matched by JSON name at ${primaryPaths[primaryIdx]}');
+        return;
+      }
+
+      // 2. Secondary: use the "image" field value as a bare filename
+      if (book.image.isNotEmpty && !book.image.startsWith('assets/')) {
+        final imageBaseName = book.image.split('/').last;
+        final imagePath = '$bookDir/$imageBaseName';
+        if (await File(imagePath).exists()) {
           book.setLocalImagePath(imagePath);
+          debugPrint('BookCtrl: image from book.image field at $imagePath');
+          return;
         }
       }
+
+      debugPrint(
+          'BookCtrl: no local image found for "${book.title}" (dir=$bookDir, base=$jsonBase)');
     } catch (e) {
       print('Error checking local image: $e');
     }
   }
 
   Future<void> reloadBooks() async {
-    // Clear existing lists
-    booksList.clear();
-    randombooksList.clear();
-
-    // Reload all books
+    // loadBooks() guards itself with _isLoading, so just call it directly.
+    // It uses assignAll() which atomically replaces the list.
     await loadBooks();
-
-    // Notify observers
-    booksList.refresh();
-    randombooksList.refresh();
   }
 }

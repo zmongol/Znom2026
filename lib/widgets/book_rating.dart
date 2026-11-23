@@ -5,9 +5,9 @@ import 'package:mongol/mongol.dart';
 class BookRating extends StatelessWidget {
   final double? score;
   const BookRating({
-    Key? key,
+    super.key,
     this.score,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class BookRating extends StatelessWidget {
             blurRadius: 20,
             color: isDark
                 ? Colors.black.withOpacity(.4)
-                : Color(0xFD3D3D3).withOpacity(.5),
+                : Color(0x0fd3d3d3).withOpacity(.5),
           ),
         ],
       ),

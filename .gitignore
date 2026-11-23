@@ -73,3 +73,5 @@ lib/services/book_sync_service.dart
 lib/services/book_sync_service.dart
 android/local.properties
 android/local.properties
+# Local FTP credentials for the Mini book server (never commit)
+lib/services/ftp_secrets.dart
