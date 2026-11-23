@@ -54,7 +54,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           children: [
             Text(
               widget.query,
-              style: const TextStyle(
+              style: TextStyle(
+                  fontFamily: fontFamily,
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600),
