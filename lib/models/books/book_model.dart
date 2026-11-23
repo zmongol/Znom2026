@@ -8,6 +8,9 @@ class Book {
     this.content = '',
     this.rating = 0,
     this.chapters = const [],
+    this.isImageBook = false,
+    this.pageCount = 0,
+    this.pagePrefix = '',
   });
 
   String title;
@@ -16,6 +19,17 @@ class Book {
   String content;
   double rating;
   List<BookChapter> chapters;
+
+  /// True when the book is a scanned PDF shown as page images instead of
+  /// text chapters (book JSON `"type": "image"`).
+  bool isImageBook;
+
+  /// Number of page images for an image book (0 for text books).
+  int pageCount;
+
+  /// File-name prefix of the page images, e.g. `folktales-1979`
+  /// (pages are `<prefix>-p001.jpg` … in the downloaded books folder).
+  String pagePrefix;
 
   static List<Book> fetchList(dynamic data) {
     if (data == null) return [];
@@ -47,7 +61,17 @@ class Book {
         rating: (json["rating"] is num)
             ? (json["rating"] as num).toDouble()
             : double.tryParse('${json["rating"]}') ?? 0,
+        isImageBook: json["type"] == "image",
+        pageCount: (json["pageCount"] is num)
+            ? (json["pageCount"] as num).toInt()
+            : int.tryParse('${json["pageCount"]}') ?? 0,
+        pagePrefix: json["pagePrefix"] ?? "",
       );
+
+  /// File name of the [pageNumber]th page (1-based) of an image book,
+  /// e.g. `folktales-1979-p001.jpg`.
+  static String imagePageFileName(String prefix, int pageNumber) =>
+      '$prefix-p${pageNumber.toString().padLeft(3, '0')}.jpg';
 
   // Helper to get local image path
   String? localImagePath;

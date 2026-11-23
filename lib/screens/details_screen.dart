@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_model.dart';
+import 'package:book_app/screens/image_reading_screen.dart';
 import 'package:book_app/screens/reading_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
@@ -105,6 +106,12 @@ class DetailsScreen extends StatelessWidget {
                             (e, i) => ChapterCard(
                               chapter: e,
                               press: () {
+                                // Image books open the page-image reader;
+                                // text books open the text reader.
+                                if (book.isImageBook) {
+                                  ImageReadingScreen.open(context, book);
+                                  return;
+                                }
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -307,7 +314,8 @@ class DetailsScreen extends StatelessWidget {
 }
 
 /// Shows a "Continue Reading" card when the user has saved progress for [book].
-/// Tapping it resumes the exact chapter and scroll position.
+/// Tapping it resumes the exact chapter and scroll position (or, for image
+/// books, the last-read page).
 class _ContinueReadingBanner extends StatelessWidget {
   final Book book;
   const _ContinueReadingBanner({required this.book});
@@ -334,6 +342,11 @@ class _ContinueReadingBanner extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            // Image books resume at the saved page in the image reader.
+            if (book.isImageBook) {
+              ImageReadingScreen.open(context, book);
+              return;
+            }
             Navigator.push(
               context,
               MaterialPageRoute(

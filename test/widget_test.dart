@@ -28,7 +28,9 @@ void main() {
 
   test('bundled books are discovered and parse', () async {
     final files = await loadBookFiles();
-    expect(files.length, 4, reason: 'the 4 bundled books in assets/json/books/');
+    expect(files.length, 5,
+        reason:
+            'the 5 bundled books in assets/json/books/ (4 text + Folk Tales image book)');
 
     int parsed = 0;
     for (final f in files) {
@@ -43,7 +45,7 @@ void main() {
       expect(book.chapters, isNotEmpty);
       parsed++;
     }
-    expect(parsed, 4);
+    expect(parsed, 5);
   });
 
   test('full-text search finds a word from the Secret History', () async {
@@ -53,9 +55,12 @@ void main() {
       final data = await loadBookJson(f);
       books.add(Book.fetch(data!['items'] as List<dynamic>));
     }
-    // Take a real word straight out of the first chapter's content so the
-    // test does not depend on hand-typed Z52.
-    final first = books.first.chapters.first.content ?? '';
+    // Take a real word straight out of a text book's first chapter so
+    // the test does not depend on hand-typed Z52. The Folk Tales image
+    // book sorts among the bundled books; its chapter content is a
+    // description, not book text, so skip image books here.
+    final firstText = books.firstWhere((b) => !b.isImageBook);
+    final first = firstText.chapters.first.content ?? '';
     expect(first.length, greaterThan(10));
     final word = first.split(' ').firstWhere((w) => w.length > 2);
     final results = BookSearchService.search(word, books);
@@ -81,6 +86,7 @@ void main() {
       'assets/json/books/SecretHistoryOfMongols.json',
       'assets/json/books/Compendium of Chronicles.json',
       'assets/json/books/LookingForBook.json',
+      'assets/json/books/folktales-1979.json',
     ]) {
       final raw = await rootBundle.loadString(name);
       expect(jsonDecode(raw), isA<Map<String, dynamic>>());
