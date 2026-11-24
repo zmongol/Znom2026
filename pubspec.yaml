@@ -57,6 +57,7 @@ flutter:
     - assets/images/
     - assets/json/books/
     - assets/pages/folktales-1979/
+    - assets/pages/secret-history/
     # Fonts are declared under `fonts:` below; no need to include the whole folder here.
 
   #  - images/a_dot_ham.jpeg

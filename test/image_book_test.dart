@@ -55,4 +55,30 @@ void main() {
     expect(book.pageCount, 274);
     expect(book.chapters, hasLength(1));
   });
+
+  test("secret history page file names are zero-padded to 3 digits", () {
+    expect(Book.imagePageFileName("secret-history", 1),
+        "secret-history-p001.jpg");
+    expect(Book.imagePageFileName("secret-history", 16),
+        "secret-history-p016.jpg");
+    expect(Book.imagePageFileName("secret-history", 463),
+        "secret-history-p463.jpg");
+  });
+
+  test("secret history book JSON parses", () {
+    final book = Book.fromJson({
+      "title": "test title",
+      "image": "secret-history.jpg",
+      "auth": "test author",
+      "content": "test description",
+      "rating": 4.9,
+      "type": "image",
+      "pageCount": 463,
+      "pagePrefix": "secret-history",
+    });
+    expect(book.isImageBook, isTrue);
+    expect(book.pageCount, 463);
+    expect(book.pagePrefix, "secret-history");
+    expect(book.title, "test title");
+  });
 }
