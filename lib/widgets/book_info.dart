@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/screens/image_reading_screen.dart';
 import 'package:book_app/screens/reading_screen.dart';
@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import '../Component/MongolFonts.dart';
 import '../consttants.dart';
 import '../global_controllers/books_ctrl.dart';
-import 'book_rating.dart';
+import 'book_card.dart';
 
 class BookInfo extends StatelessWidget {
   final Book book;
@@ -66,7 +66,6 @@ class BookInfo extends StatelessWidget {
                 ),
                 onPressed: () {},
               ),
-              BookRating(score: 4.9),
               SizedBox(height: 10),
               // TextBox decoration
               GestureDetector(
@@ -92,9 +91,7 @@ class BookInfo extends StatelessWidget {
                   decoration: BoxDecoration(
                       border: Border.all(
                           color: isDark ? Colors.grey.shade600 : Colors.white),
-                      color: isDark
-                          ? Color(0xFF3A3F47)
-                          : Color.fromARGB(255, 143, 146, 148),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(10)),
                   child: Container(
                     height: 80,
@@ -130,26 +127,6 @@ class BookInfo extends StatelessWidget {
   }
 }
 
-/// Returns the book cover image: the downloaded local file, or a
-/// placeholder when the cover has not been downloaded yet.
-Widget _bookCoverImage(Book book) {
-  if (book.localImagePath != null && book.localImagePath!.isNotEmpty) {
-    return Image.file(
-      File(book.localImagePath!),
-      height: double.infinity,
-      alignment: Alignment.topRight,
-      fit: BoxFit.fitWidth,
-      errorBuilder: (_, __, ___) => _bookImagePlaceholder(),
-    );
-  }
-  // No bundled covers any more: a book without a downloaded cover
-  // (localImagePath) shows the placeholder.
-  return _bookImagePlaceholder();
-}
-
-Widget _bookImagePlaceholder() => Container(
-      color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
-      child: const Center(
-        child: Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7)),
-      ),
-    );
+/// Returns the book cover image: the downloaded local file, or the
+/// logo placeholder when the cover has not been downloaded yet.
+Widget _bookCoverImage(Book book) => BookCoverImage(book: book);

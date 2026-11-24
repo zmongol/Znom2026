@@ -1,7 +1,10 @@
 import 'package:book_app/core/constants/app_colors.dart';
+import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_chapter_model.dart';
 import 'package:book_app/models/books/book_model.dart';
+import 'package:book_app/screens/chapter_picker_screen.dart';
+import 'package:book_app/widgets/reader_settings_sheet.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,7 +12,6 @@ import 'package:mongol/mongol.dart';
 
 import '../Component/find_ctrls.dart';
 import '../widgets/mongol_text_selector.dart';
-import 'Donate.dart';
 import 'search_screen.dart';
 
 final _bookCtrl = FindCtrl.book;
@@ -109,7 +111,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       spans.add(TextSpan(
         text: content.substring(idx, idx + query.length),
         style: const TextStyle(
-          backgroundColor: Colors.yellow,
+          backgroundColor: AppColors.highlightAmber,
           color: Colors.black,
           fontWeight: FontWeight.bold,
         ),
@@ -125,9 +127,22 @@ class _ReadingScreenState extends State<ReadingScreen> {
     return spans;
   }
 
+  /// Fraction of the current chapter scrolled through (0–1), for the
+  /// reading-progress display in the bottom bar.
+  double _scrollFraction = 0;
+
   void _onScroll() {
     ReadingProgress.save(
         widget.book.title, _currentChapter, _scrollCtrl.offset);
+    if (!_scrollCtrl.hasClients) return;
+    final max = _scrollCtrl.position.maxScrollExtent;
+    final fraction = max > 0 ? (_scrollCtrl.offset / max).clamp(0.0, 1.0) : 0.0;
+    // Rebuild only when the rounded percent actually changes.
+    if ((fraction * 100).round() != (_scrollFraction * 100).round()) {
+      setState(() => _scrollFraction = fraction);
+    } else {
+      _scrollFraction = fraction;
+    }
   }
 
   void _goToChapter(int index) {
@@ -137,6 +152,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _searchQuery = '';
       _searchTextCtrl.clear();
       _searchMode = false;
+      _scrollFraction = 0;
     });
     _scrollCtrl.jumpTo(0.0);
     ReadingProgress.save(widget.book.title, index, 0.0);
@@ -207,45 +223,28 @@ class _ReadingScreenState extends State<ReadingScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.favorite, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
+                  icon: const Icon(Icons.list_alt, color: Colors.white),
+                  tooltip: 'Chapters',
+                  onPressed: () async {
+                    final picked = await Navigator.push<int>(
                       context,
-                      MaterialPageRoute(builder: (context) => Donation()),
+                      MaterialPageRoute(
+                        builder: (_) => ChapterPickerScreen(
+                          book: widget.book,
+                          currentChapter: _currentChapter,
+                        ),
+                      ),
                     );
+                    if (picked != null && picked != _currentChapter) {
+                      _goToChapter(picked);
+                    }
                   },
                 ),
-                Obx(() {
-                  final fontFamily = _bookCtrl.fontFamily.value.isEmpty
-                      ? null
-                      : _bookCtrl.fontFamily.value;
-                  return PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: Colors.white),
-                      itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: "FontSize",
-                              child: Text(
-                                "ᡥᡭᡬᢔᡭᡬᡨ ᡭᡧ ᢜᡪᢊᡪᡨ ᡳᡪᢉᡨ",
-                                style: TextStyle(fontFamily: fontFamily),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: "FontFamily",
-                              child: Text(
-                                "ᢘᡬᡬᡨ ᢔᡭᢑᡬᡪᡪᡳ",
-                                style: TextStyle(fontFamily: fontFamily),
-                              ),
-                            ),
-                          ],
-                      onSelected: (val) {
-                        if (val == "FontSize") {
-                          _bookCtrl.changeFontScale();
-                        }
-                        if (val == "FontFamily") {
-                          _bookCtrl.changeFontFamily();
-                        }
-                      });
-                }),
+                IconButton(
+                  icon: const Icon(Icons.tune, color: Colors.white),
+                  tooltip: 'Reading settings',
+                  onPressed: showReaderSettingsSheet,
+                ),
               ],
             ),
       bottomNavigationBar: Container(
@@ -259,72 +258,211 @@ class _ReadingScreenState extends State<ReadingScreen> {
                   ? () => _goToChapter(_currentChapter - 1)
                   : null,
               icon: const Icon(Icons.chevron_left),
-              label: const Text('Prev'),
+              label: SizedBox(
+                height: 22,
+                child: Obx(
+                  () => MongolText(
+                    UiStrings.prev,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                          ? null
+                          : _bookCtrl.fontFamily.value,
+                      color: _currentChapter > 0
+                          ? AppColors.primary
+                          : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
             ),
-            Text(
-              '${_currentChapter + 1} / $totalChapters',
-              style: Theme.of(context).textTheme.bodySmall,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${_currentChapter + 1} / $totalChapters · '
+                  '${(((totalChapters == 0 ? 0 : (_currentChapter + _scrollFraction) / totalChapters)) * 100).round()}%',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 3),
+                SizedBox(
+                  width: 96,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: totalChapters == 0
+                          ? 0
+                          : (_currentChapter + _scrollFraction) /
+                              totalChapters,
+                      minHeight: 3,
+                      backgroundColor:
+                          AppColors.secondary.withOpacity(0.18),
+                      valueColor:
+                          const AlwaysStoppedAnimation(AppColors.secondary),
+                    ),
+                  ),
+                ),
+              ],
             ),
             TextButton.icon(
               onPressed: _currentChapter < totalChapters - 1
                   ? () => _goToChapter(_currentChapter + 1)
                   : null,
               icon: const Icon(Icons.chevron_right),
-              label: const Text('Next'),
+              label: SizedBox(
+                height: 22,
+                child: Obx(
+                  () => MongolText(
+                    UiStrings.next,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                          ? null
+                          : _bookCtrl.fontFamily.value,
+                      color: _currentChapter < totalChapters - 1
+                          ? AppColors.primary
+                          : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
               iconAlignment: IconAlignment.end,
             ),
           ],
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.fromLTRB(10, 10, 16, 30),
-        child: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(
-            dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse,
-              PointerDeviceKind.trackpad,
-            },
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: BouncingScrollPhysics(),
-            controller: _scrollCtrl,
-            child: SizedBox(
-              height: context.height,
-              child: Obx(
-                () {
-                  final style = _bookCtrl.contentStyle.value;
-                  final activeQuery = _searchQuery.isNotEmpty
-                      ? _searchQuery
-                      : widget.highlightQuery;
-                  final fullText = chapter.content ?? '';
-                  if (activeQuery == null || activeQuery.isEmpty) {
-                    return MongolTextSelector(
-                      text: fullText,
-                      child: MongolText(
-                        fullText,
-                        textAlign: MongolTextAlign.top,
-                        style: style,
-                      ),
-                    );
-                  }
-                  return MongolTextSelector(
-                    text: fullText,
-                    child: MongolText.rich(
-                      TextSpan(
-                        style: style,
-                        children: _buildHighlightSpans(fullText, activeQuery),
-                      ),
-                      textAlign: MongolTextAlign.top,
-                    ),
-                  );
+      body: Obx(() {
+        // Reader page background: white / sepia / dark (settings sheet).
+        final bg = _bookCtrl.readerBackground.value;
+        final bgColor = bg == 'sepia'
+            ? AppColors.readerSepia
+            : bg == 'dark'
+                ? AppColors.readerDarkBg
+                : null;
+        final textColor = bg == 'sepia'
+            ? AppColors.readerSepiaText
+            : bg == 'dark'
+                ? AppColors.readerDarkText
+                : null;
+        return Container(
+          color: bgColor,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 16, 30),
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                  PointerDeviceKind.trackpad,
                 },
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                controller: _scrollCtrl,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: context.height,
+                      child: Obx(
+                        () {
+                          final baseStyle = _bookCtrl.contentStyle.value;
+                          final style = textColor == null
+                              ? baseStyle
+                              : baseStyle.copyWith(color: textColor);
+                          final activeQuery = _searchQuery.isNotEmpty
+                              ? _searchQuery
+                              : widget.highlightQuery;
+                          final fullText = chapter.content ?? '';
+                          if (activeQuery == null || activeQuery.isEmpty) {
+                            return MongolTextSelector(
+                              text: fullText,
+                              child: MongolText(
+                                fullText,
+                                textAlign: MongolTextAlign.top,
+                                style: style,
+                              ),
+                            );
+                          }
+                          return MongolTextSelector(
+                            text: fullText,
+                            child: MongolText.rich(
+                              TextSpan(
+                                style: style,
+                                children:
+                                    _buildHighlightSpans(fullText, activeQuery),
+                              ),
+                              textAlign: MongolTextAlign.top,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // ── End-of-chapter navigation ──────────────────────
+                    const SizedBox(width: 40),
+                    SizedBox(
+                      width: 190,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            height: 44,
+                            child: Obx(
+                              () => MongolText(
+                                UiStrings.chapters,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily:
+                                      _bookCtrl.fontFamily.value.isEmpty
+                                          ? null
+                                          : _bookCtrl.fontFamily.value,
+                                  color: textColor ?? AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _currentChapter > 0
+                                  ? () => _goToChapter(_currentChapter - 1)
+                                  : null,
+                              icon: const Icon(Icons.chevron_left),
+                              label: const Text('Previous chapter'),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed:
+                                  _currentChapter < totalChapters - 1
+                                      ? () =>
+                                          _goToChapter(_currentChapter + 1)
+                                      : null,
+                              icon: const Icon(Icons.chevron_right),
+                              label: const Text('Next chapter'),
+                              iconAlignment: IconAlignment.end,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

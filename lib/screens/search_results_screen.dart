@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mongol/mongol.dart';
 import 'package:book_app/core/constants/app_colors.dart';
+import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/Component/find_ctrls.dart';
 import 'package:book_app/models/books/book_model.dart';
@@ -49,28 +50,54 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.query,
-              style: TextStyle(
-                  fontFamily: fontFamily,
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600),
-            ),
-            Text(
-              '${_allMatches.length} match${_allMatches.length == 1 ? '' : 'es'}'
-              ' · ${_results.length} chapter${_results.length == 1 ? '' : 's'}',
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
-            ),
-          ],
+        // The query itself stays in the search field on the previous
+        // screen — the header here is the Mongolian-first results label
+        // in the body, not the rotated query word.
+        title: const Text(
+          'Results',
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
-      body: _results.isEmpty
-          ? _buildEmpty(isDark)
-          : ListView.builder(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Mongolian-first header: Z52 label + English count line.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 84,
+                  child: MongolText(
+                    UiStrings.searchResults,
+                    style: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.95)
+                          : const Color(0xFF2D3436),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_allMatches.length} match${_allMatches.length == 1 ? '' : 'es'}'
+                  ' · ${_results.length} chapter${_results.length == 1 ? '' : 's'}',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    letterSpacing: 0.4,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _results.isEmpty
+                ? _buildEmpty(isDark)
+                : ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               itemCount: _results.length,
@@ -95,7 +122,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   ),
                 );
               },
-            ),
+                ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -118,18 +148,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 }
 
-// ─── Accent colour palette — one per card, cycles ────────────────────────────
-
-const _kCardColors = [
-  Color(0xFF4F7CAC), // slate blue
-  Color(0xFF5A9E78), // sage green
-  Color(0xFF8B6BAE), // lavender
-  Color(0xFFB07A5F), // terracotta
-  Color(0xFF4E8098), // teal
-  Color(0xFFBF7A56), // amber
-  Color(0xFF6B7FB5), // periwinkle
-  Color(0xFF7E9E6A), // olive
-];
+// ─── Accent colour palette — brand-derived, one per card, cycles ───────────
+// All shades come from the two logo colours (orange / green); see
+// AppColors.cardAccents.
+const _kCardColors = AppColors.cardAccents;
 
 // ─── Card widget ──────────────────────────────────────────────────────────────
 
@@ -294,7 +316,8 @@ class _ResultCard extends StatelessWidget {
                                     style: TextStyle(
                                       fontFamily: fontFamily,
                                       fontSize: 18,
-                                      backgroundColor: Colors.yellow.shade400,
+                                      backgroundColor:
+                                          AppColors.highlightAmber,
                                       color: Colors.black87,
                                       fontWeight: FontWeight.w800,
                                     ),

@@ -4,6 +4,7 @@ import 'package:mongol/mongol.dart';
 import 'package:get/get.dart';
 
 import '../Component/MongolFonts.dart';
+import 'package:book_app/core/constants/app_colors.dart';
 import '../global_controllers/books_ctrl.dart';
 
 class Donation extends StatelessWidget {
@@ -58,14 +59,14 @@ class Donation extends StatelessWidget {
                 'In order to write and search Traditional Mongolian script correctly, we developed our own Z52 unicode standard, 50+ beautifully designed fonts, an Artificial Intelligence Input Method Editor and word suggestion software packages for various platforms including iOS, Android, Macbook, and Windows. We also established a website and code conversion software. To build these mobile applications, we used Python/ Flutter/ VSC/ Xcode and many more packages.\nLet us celebrate the longevity of the Mongolian script!',
                 style: TextStyle(
                   fontFamily: MongolFonts.z52saitig,
-                  // color: Color(0xFF0072AA),
+                  // color: AppColors.primary,
                 ),
               ),
               Text(
                 '@Chuck Namujila',
                 style: TextStyle(
                   fontFamily: MongolFonts.z52saitig,
-                  // color: Color(0xFF0072AA),
+                  // color: AppColors.primary,
                 ),
               ),
               SizedBox(
@@ -78,7 +79,7 @@ class Donation extends StatelessWidget {
                       "ZmongolCag",
                       style: TextStyle(
                         fontSize: 20,
-                        color: Color(0xFF0072AA),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontFamily: MongolFonts.z52haratig,
                       ),
@@ -95,7 +96,7 @@ class Donation extends StatelessWidget {
                                 fontSize: 20,
                                 fontFamily: MongolFonts.z52agolatig,
                                 fontWeight: FontWeight.normal,
-                                // color: Color(0xFF0072AA),
+                                // color: AppColors.primary,
                               ),
                             ),
                             SizedBox(
@@ -136,7 +137,7 @@ class Donation extends StatelessWidget {
                       "Mongolian!",
                       style: TextStyle(
                         fontSize: 20,
-                        color: Color(0xFF0072AA),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontFamily: MongolFonts.z52haratig,
                       ),
@@ -153,7 +154,7 @@ class Donation extends StatelessWidget {
                                 fontSize: 20,
                                 fontFamily: MongolFonts.z52agolatig,
                                 fontWeight: FontWeight.normal,
-                                // color: Color(0xFF0072AA),
+                                // color: AppColors.primary,
                               ),
                             ),
                             SizedBox(
@@ -194,7 +195,7 @@ class Donation extends StatelessWidget {
                       "Zmongol2.0",
                       style: TextStyle(
                         fontSize: 20,
-                        color: Color(0xFF0072AA),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontFamily: MongolFonts.z52haratig,
                       ),
@@ -211,7 +212,7 @@ class Donation extends StatelessWidget {
                                 fontSize: 20,
                                 fontFamily: MongolFonts.z52agolatig,
                                 fontWeight: FontWeight.normal,
-                                // color: Color(0xFF0072AA),
+                                // color: AppColors.primary,
                               ),
                             ),
                             SizedBox(
@@ -284,7 +285,7 @@ class Donation extends StatelessWidget {
                 "www.zvvnmod.com",
                 style: TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF0072AA),
+                  color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                   fontFamily: MongolFonts.z52haratig,
                 ),
@@ -311,7 +312,7 @@ class Donation extends StatelessWidget {
                       "Хандив  BuyMeCoffee  赏杯咖啡",
                       style: TextStyle(
                         fontSize: 20,
-                        color: Color(0xFF0072AA),
+                        color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontFamily: MongolFonts.z52haratig,
                       ),
@@ -355,7 +356,7 @@ class Donation extends StatelessWidget {
                                   "Wechat  微信赞赏",
                                   style: TextStyle(
                                     fontSize: 16,
-                                    // color: Color(0xFF0072AA),
+                                    // color: AppColors.primary,
                                     fontFamily: MongolFonts.z52ordostig,
                                   ),
                                 ),
@@ -375,7 +376,7 @@ class Donation extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        // color: Color(0xFF0072AA),
+                        // color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -388,7 +389,7 @@ class Donation extends StatelessWidget {
                 "Вэбсайт  RelatedWebsite  相关网站",
                 style: TextStyle(
                   fontSize: 18,
-                  // color: Color(0xFF0072AA),
+                  // color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                   fontFamily: MongolFonts.z52saitig,
                 ),
@@ -408,7 +409,7 @@ class Donation extends StatelessWidget {
                 "Contact 联系",
                 style: TextStyle(
                   fontSize: 18,
-                  color: Color(0xFF0072AA),
+                  color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                   fontFamily: MongolFonts.z52saitig,
                 ),

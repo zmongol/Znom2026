@@ -1,3 +1,4 @@
+import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/models/search_result.dart';
 
@@ -35,7 +36,7 @@ class BookSearchService {
             chapterIndex: ci,
             chapterTitle: (chapter.chapterTitle?.isNotEmpty == true)
                 ? chapter.chapterTitle!
-                : 'Chapter ${ci + 1}',
+                : '${UiStrings.chapter} ${ci + 1}',
             query: trimmed,
             matchStarts: matchStarts,
           ));

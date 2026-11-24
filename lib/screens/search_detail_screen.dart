@@ -201,8 +201,9 @@ class _SearchDetailScreenState extends State<SearchDetailScreen> {
                                     TextSpan(text: before),
                                     TextSpan(
                                       text: matchText,
-                                      style: TextStyle(
-                                        backgroundColor: Colors.yellow[400],
+                                      style: const TextStyle(
+                                        backgroundColor:
+                                            AppColors.highlightAmber,
                                         color: Colors.black,
                                         fontWeight: FontWeight.bold,
                                       ),

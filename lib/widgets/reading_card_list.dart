@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/consttants.dart';
+import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/widgets/book_rating.dart';
 import 'package:book_app/widgets/two_side_rounded_button.dart';
@@ -141,7 +142,7 @@ Widget _readingCardImage(Book book) {
       width: 100,
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) =>
-          const Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7)),
+          const Icon(Icons.book, size: 40, color: AppColors.primary),
     );
   }
   if (book.image.isNotEmpty) {
@@ -149,8 +150,8 @@ Widget _readingCardImage(Book book) {
       book.image,
       width: 100,
       errorBuilder: (_, __, ___) =>
-          const Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7)),
+          const Icon(Icons.book, size: 40, color: AppColors.primary),
     );
   }
-  return const Icon(Icons.book, size: 40, color: Color(0xFF6C5CE7));
+  return const Icon(Icons.book, size: 40, color: AppColors.primary);
 }

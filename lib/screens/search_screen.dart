@@ -1,6 +1,7 @@
 import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/Component/find_ctrls.dart';
 import 'package:book_app/core/constants/app_colors.dart';
+import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/screens/search_results_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,7 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'Search Books',
+          'Znom',
           style: TextStyle(color: Colors.white, fontSize: 17),
         ),
         actions: [
@@ -83,6 +84,42 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Column(
         children: [
+          // ── Mongolian-first header ──────────────────────────────────
+          Container(
+            width: double.infinity,
+            color: isDark ? const Color(0xFF1A2332) : Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 78,
+                  child: MongolText(
+                    UiStrings.searchBooks,
+                    style: TextStyle(
+                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                          ? MongolFonts.z52agolatig
+                          : _bookCtrl.fontFamily.value,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.95)
+                          : const Color(0xFF2D3436),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Search Books',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    letterSpacing: 0.4,
+                    color: isDark ? Colors.white54 : Colors.black45,
+                  ),
+                ),
+              ],
+            ),
+          ),
           // ── Text area + side buttons ──────────────────────────────────
           Expanded(
             child: Container(

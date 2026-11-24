@@ -12,6 +12,7 @@ import 'package:book_app/models/books/book_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class BookCtrl extends GetxService {
   var booksList = <Book>[].obs;
@@ -26,6 +27,9 @@ class BookCtrl extends GetxService {
 
   var fontScale = 1.0.obs;
   var fontFamily = "".obs;
+
+  /// Reader page background: 'white' | 'sepia' | 'dark'.
+  var readerBackground = 'white'.obs;
 
   StreamSubscription<void>? _bookUpdateSub;
   bool _isLoading = false;
@@ -85,6 +89,8 @@ class BookCtrl extends GetxService {
     }
     final savedTheme = "".boxThemeMode;
     isDarkMode.value = savedTheme == "dark";
+    readerBackground.value =
+        GetStorage().read<String>('readerBg') ?? 'white';
     if ("".boxfontFamily.isEmpty) {
       final family = MongolFonts.fontList[0][0].toString();
       family.boxfontFamily;
@@ -138,6 +144,29 @@ class BookCtrl extends GetxService {
     );
   }
 
+  /// Applies a font family directly (used by the reader settings sheet,
+  /// where the picker is embedded instead of opened as a dialogue).
+  void setFontFamilyByName(String family) {
+    fontFamily.value = family;
+    family.boxfontFamily;
+    Get.find<FontService>().setFont(family);
+    _updateContentStyle();
+    _refreshTheme();
+  }
+
+  /// Applies a font scale directly (reader settings sheet).
+  void setFontScaleValue(double val) {
+    fontScale.value = val;
+    val.toString().boxfontScale;
+    fontScale.refresh();
+    _updateContentStyle();
+  }
+
+  void setReaderBackground(String value) {
+    readerBackground.value = value;
+    GetStorage().write('readerBg', value);
+  }
+
   void toggleThemeMode() {
     isDarkMode.value = !isDarkMode.value;
     (isDarkMode.value ? "dark" : "light").boxThemeMode;
@@ -186,12 +215,10 @@ class BookCtrl extends GetxService {
             if (ch.chapterNumber == null || ch.chapterNumber == 0) {
               ch.chapterNumber = i + 1;
             }
-            if ((ch.chapterTitle ?? '').trim().isEmpty) {
-              final fromTitle = (ch.title ?? '').trim();
-              ch.chapterTitle = fromTitle.isNotEmpty
-                  ? fromTitle
-                  : 'Chapter ${ch.chapterNumber}';
-            }
+            // An empty chapterTitle stays empty on purpose: display
+            // sites fall back to "<chapter word> N" (UiStrings.chapter,
+            // Z52) — never a Latin "Chapter N" and never the book title
+            // masquerading as a chapter title.
           }
           await _checkAndSetLocalImage(dd, bookfile);
           loaded.add(dd);

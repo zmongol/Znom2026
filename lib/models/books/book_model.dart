@@ -54,9 +54,9 @@ class Book {
   }
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
-        title: json["title"] ?? "",
+        title: stripMarkup(json["title"]?.toString()),
         image: json["image"] ?? "",
-        auth: json["auth"] ?? "",
+        auth: stripMarkup(json["auth"]?.toString()),
         content: json["content"] ?? "",
         rating: (json["rating"] is num)
             ? (json["rating"] as num).toDouble()

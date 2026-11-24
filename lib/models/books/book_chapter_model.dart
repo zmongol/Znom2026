@@ -1,3 +1,11 @@
+/// Strips raw markup tags (e.g. a stray "<title>…</title>" left in a
+/// book's metadata by an export tool) from a display string, so raw
+/// tags can never reach the UI. Book content itself is NOT sanitised.
+String stripMarkup(String? value) {
+  if (value == null) return '';
+  return value.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+}
+
 class BookChapter {
   BookChapter({
     this.title = '',
@@ -35,14 +43,14 @@ class BookChapter {
   }
 
   factory BookChapter.fromJson(Map<String, dynamic> json) => BookChapter(
-        title: json["title"] ?? "",
+        title: stripMarkup(json["title"]?.toString()),
         image: json["image"] ?? "",
-        auth: json["auth"] ?? "",
+        auth: stripMarkup(json["auth"]?.toString()),
         rating: (json["rating"] is num)
             ? (json["rating"] as num).toDouble()
             : double.tryParse('${json["rating"]}') ?? 0,
         chapterNumber: json["chapterNumber"] ?? 0,
-        chapterTitle: json["chapterTitle"] ?? "",
+        chapterTitle: stripMarkup(json["chapterTitle"]?.toString()),
         content: json["content"] ?? "",
         releasedate: json["release_date"] ?? "",
       );
