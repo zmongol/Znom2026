@@ -130,7 +130,8 @@ class BookInfo extends StatelessWidget {
   }
 }
 
-/// Returns the book cover image: local file (FTP download) preferred over asset.
+/// Returns the book cover image: the downloaded local file, or a
+/// placeholder when the cover has not been downloaded yet.
 Widget _bookCoverImage(Book book) {
   if (book.localImagePath != null && book.localImagePath!.isNotEmpty) {
     return Image.file(
@@ -141,16 +142,8 @@ Widget _bookCoverImage(Book book) {
       errorBuilder: (_, __, ___) => _bookImagePlaceholder(),
     );
   }
-  // Only use Image.asset for bundled assets — FTP books have bare filenames
-  if (book.image.isNotEmpty && book.image.startsWith('assets/')) {
-    return Image.asset(
-      book.image,
-      height: double.infinity,
-      alignment: Alignment.topRight,
-      fit: BoxFit.fitWidth,
-      errorBuilder: (_, __, ___) => _bookImagePlaceholder(),
-    );
-  }
+  // No bundled covers any more: a book without a downloaded cover
+  // (localImagePath) shows the placeholder.
   return _bookImagePlaceholder();
 }
 

@@ -19,7 +19,7 @@ void main() async {
   // MobileAds.instance.initialize();  // Disabled
   _putCtrls();
   runApp(MyApp());
-  // Start the Mini FTP book sync once the app is on screen.
+  // Start the book-server sync once the app is on screen.
   WidgetsBinding.instance.addPostFrameCallback((_) {
     BookSyncService.startAutoUpdate();
   });

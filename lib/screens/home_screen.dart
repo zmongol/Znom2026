@@ -165,6 +165,39 @@ class HomeScreen extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 24),
             sliver: Obx(() {
               final count = _bookCtrl.booksList.length;
+              if (count == 0) {
+                // Fresh install with no server reach yet: the library is
+                // empty until the first sync downloads books. Say so
+                // plainly instead of showing a blank grid.
+                return SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.cloud_download_outlined,
+                            size: 40, color: Color(0xFF6C5CE7)),
+                        SizedBox(height: 12),
+                        Text(
+                          'No books downloaded yet',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Books download from the Znom book server when '
+                          'you are online. Check your internet connection '
+                          '— the library refreshes automatically.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
               return SliverGrid(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -467,21 +500,8 @@ class HomeScreen extends StatelessWidget {
       );
     }
 
-    // Only use Image.asset for bundled assets — FTP books have bare filenames
-    if (book.image != null &&
-        (book.image as String).isNotEmpty &&
-        (book.image as String).startsWith('assets/')) {
-      return Image.asset(
-        book.image,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        cacheWidth: 240,
-        cacheHeight: 240,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildPlaceholderImage(book);
-        },
-      );
-    }
+    // No bundled covers any more: a book without a downloaded cover
+    // (localImagePath) shows the placeholder below.
 
     // Show placeholder
     return _buildPlaceholderImage(book);

@@ -283,17 +283,8 @@ class DetailsScreen extends StatelessWidget {
       );
     }
 
-    // Check if there's an asset image
-    if (book.image != null && book.image.isNotEmpty) {
-      return Image.asset(
-        book.image,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildPlaceholderImage(book);
-        },
-      );
-    }
+    // No bundled covers any more: a book without a downloaded cover
+    // (localImagePath) shows the placeholder below.
 
     // Show placeholder
     return _buildPlaceholderImage(book);

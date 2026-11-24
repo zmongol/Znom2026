@@ -38,9 +38,9 @@ class BookCtrl extends GetxService {
     // Await via async helper so onInit itself stays synchronous
     _initialLoad();
 
-    // Listen for new books downloaded from FTP backend
+    // Listen for new books downloaded from the book server
     _bookUpdateSub = BookSyncService.onBooksUpdated.listen((_) {
-      debugPrint('BookCtrl: New books detected from FTP — reloading library');
+      debugPrint('BookCtrl: New books detected from book server — reloading library');
       reloadBooks().then((_) {
         Get.snackbar(
           'Library Updated',
@@ -157,7 +157,7 @@ class BookCtrl extends GetxService {
 
   Future<void> loadBooks() async {
     if (_isLoading) {
-      // FTP may have delivered books while we were already loading — mark for
+      // The book sync may have delivered books while we were already loading — mark for
       // a retry so the new files are not silently dropped.
       _pendingReload = true;
       debugPrint('BookCtrl: loadBooks already in progress, will retry after');
@@ -200,8 +200,8 @@ class BookCtrl extends GetxService {
         }
       }
 
-      // Deduplicate by title — FTP books are collected first in loadBookFiles()
-      // so the FTP version wins when the same book exists in both assets and FTP.
+      // Deduplicate by title — loadBookFiles() returns only server-synced
+      // files now, so a duplicate can only come from two JSONs sharing a title.
       final Set<String> seenTitles = {};
       final List<Book> deduped = [];
       for (final b in loaded) {
@@ -216,7 +216,7 @@ class BookCtrl extends GetxService {
       // run it now that the lock is released.
       if (_pendingReload) {
         _pendingReload = false;
-        debugPrint('BookCtrl: running deferred reload after FTP update');
+        debugPrint('BookCtrl: running deferred reload after book-server sync');
         loadBooks();
       }
     }
@@ -224,7 +224,7 @@ class BookCtrl extends GetxService {
 
   Future<void> _checkAndSetLocalImage(Book book, String bookFilePath) async {
     try {
-      // Only FTP-downloaded books have absolute paths
+      // All books are server-synced local files, so all paths are absolute
       if (!bookFilePath.startsWith('/')) return;
 
       final String bookDir =
@@ -248,8 +248,12 @@ class BookCtrl extends GetxService {
         return;
       }
 
-      // 2. Secondary: use the "image" field value as a bare filename
-      if (book.image.isNotEmpty && !book.image.startsWith('assets/')) {
+      // 2. Secondary: use the "image" field value as a bare filename.
+      //    The JSON stores it as an asset-style path (e.g.
+      //    "assets/images/book1.png"), but the cover itself is a server
+      //    file downloaded into this same dir — so match on the bare
+      //    filename whatever prefix the field carries.
+      if (book.image.isNotEmpty) {
         final imageBaseName = book.image.split('/').last;
         final imagePath = '$bookDir/$imageBaseName';
         if (await File(imagePath).exists()) {

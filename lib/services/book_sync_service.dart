@@ -1,46 +1,84 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:ftpconnect/ftpconnect.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
-import 'ftp_secrets.dart';
+import 'book_server_config.dart';
 
-/// Syncs book JSON + cover images from the user's own Mac Mini FTP server.
+/// One entry from the book server's `manifest.json`.
+class BookManifestEntry {
+  const BookManifestEntry({
+    required this.relativePath,
+    this.size,
+    this.mtime,
+  });
+
+  /// Path relative to the server root, e.g. `SecretHistoryOfMongols.json`
+  /// or `output/folktales-1979-p001.jpg`.
+  final String relativePath;
+
+  /// File size in bytes, when the manifest reports it.
+  final int? size;
+
+  /// Last-modified time, when the manifest reports it.
+  final DateTime? mtime;
+
+  /// Local file name — the sync flattens the server tree into the local
+  /// books dir, same as the old FTP sync did.
+  String get fileName => relativePath.split('/').last;
+
+  static DateTime? _parseMtime(dynamic value) {
+    if (value == null) return null;
+    if (value is num) {
+      // Epoch seconds (~1.8e9) vs milliseconds (~1.8e12).
+      final ms =
+          value > 100000000000 ? value.toInt() : (value * 1000).toInt();
+      return DateTime.fromMillisecondsSinceEpoch(ms);
+    }
+    if (value is String) {
+      final asDate = DateTime.tryParse(value);
+      if (asDate != null) return asDate;
+      final asNum = num.tryParse(value);
+      if (asNum != null) return _parseMtime(asNum);
+    }
+    return null;
+  }
+
+  factory BookManifestEntry.fromJson(Map<String, dynamic> json) {
+    final rawPath = json['path'] ?? json['name'] ?? json['file'];
+    final rawSize = json['size'] ?? json['bytes'];
+    return BookManifestEntry(
+      relativePath: '$rawPath',
+      size: rawSize is num ? rawSize.toInt() : int.tryParse('$rawSize'),
+      mtime: _parseMtime(
+          json['mtime'] ?? json['modified'] ?? json['lastModified']),
+    );
+  }
+}
+
+/// Syncs book JSON + cover images + page images from the public book
+/// server over HTTPS (plain HTTP only for the local test URL).
 ///
 /// Server endpoint — ONE configurable constant:
-///   [FtpSecrets.host] (default '100.127.70.29', the Mini's Tailscale address)
-///   with [FtpSecrets.port] (21), [FtpSecrets.user], [FtpSecrets.password].
-/// To point the sync at a different server, edit lib/services/ftp_secrets.dart
-/// (git-ignored; see ftp_secrets.dart.template). The Mini is Tailscale-private,
-/// so phones outside the Tailscale network cannot reach it yet — public
-/// reachability is a separate later step.
+///   [BookServerConfig.baseUrl] (see lib/services/book_server_config.dart).
+/// The server serves `{baseUrl}/manifest.json` listing each file's
+/// relative path, size and mtime, and each file at
+/// `{baseUrl}/<relative-path>`. To point the sync at a different server,
+/// change that one constant.
 ///
-/// Adapted from the Zmongol flagship's FTPUpdateService (books part only;
-/// the calendar sync was dropped). Sync is best-effort background work:
-/// failures are logged to [lastBooksStatus] and never pop up UI, and the
-/// library reloads only when files actually changed.
+/// Sync is best-effort background work: failures are logged to
+/// [lastBooksStatus] and never pop up UI, books already downloaded keep
+/// working offline, and the library reloads only when files actually
+/// changed. Uses dart:io [HttpClient] (stdlib) — no new pub dependency.
 class BookSyncService extends GetxService {
-  // FTP credentials loaded from ftp_secrets.dart (git-ignored).
-  static const String _ftpHost = FtpSecrets.host;
-  static const int _ftpPort = FtpSecrets.port;
-  static const String _ftpUser = FtpSecrets.user;
-  static const String _ftpPassword = FtpSecrets.password;
-
-  // Remote book directories on the Mini server.
-  static const List<String> _remoteBooksDirectories = [
-    '/Znom/js',
-    '/Znom/js/output',
-  ];
-
   static const Duration _updateCheckInterval = Duration(minutes: 1);
+  static const Duration _requestTimeout = Duration(seconds: 30);
   static Timer? _updateTimer;
   static bool _isBooksChecking = false;
-  // Stale (corrupted) images are cleaned up on the first successful sync only.
-  static bool _staleImagesCleaned = false;
 
   // Book updates stream — BookCtrl listens to this and reloads the library.
   static final _bookUpdatesController = StreamController<void>.broadcast();
@@ -68,84 +106,93 @@ class BookSyncService extends GetxService {
     debugPrint('Book Sync: Stopped auto-update checker');
   }
 
-  /// Gets the local path where downloaded book JSON files are stored.
+  /// Gets the local path where downloaded book files are stored.
   static Future<String> getLocalBooksPath() async {
     final Directory appDocDir = await getApplicationDocumentsDirectory();
     return path.join(appDocDir.path, 'books');
   }
 
-  /// Downloads new or updated book JSON files from the Mini FTP server.
-  /// Auto-discovers all .json/.png/.jpg files on the server — new books added
-  /// to the server appear in the app on the next check.
+  /// URL for a server file. Each path segment is percent-encoded, so
+  /// names with spaces or non-ASCII characters (e.g. the Mongolian
+  /// filename) fetch correctly.
+  static Uri fileUri(String relativePath) {
+    final base = Uri.parse(BookServerConfig.baseUrl);
+    return base.replace(
+      pathSegments: [...base.pathSegments, ...relativePath.split('/')],
+    );
+  }
+
+  /// Parses `manifest.json` — either a top-level list of file entries or
+  /// an object with a `files` list. Keeps only supported book files
+  /// (.json/.png/.jpg/.jpeg), deduplicated by local file name.
+  /// Throws [FormatException] when the manifest has no file list.
+  static List<BookManifestEntry> parseManifest(dynamic decoded) {
+    final List<dynamic> raw;
+    if (decoded is List) {
+      raw = decoded;
+    } else if (decoded is Map<String, dynamic> && decoded['files'] is List) {
+      raw = decoded['files'] as List<dynamic>;
+    } else {
+      throw const FormatException('manifest.json has no file list');
+    }
+    final entries = <BookManifestEntry>[];
+    final seenNames = <String>{};
+    for (final item in raw) {
+      if (item is! Map<String, dynamic>) continue;
+      final entry = BookManifestEntry.fromJson(item);
+      if (entry.relativePath.isEmpty || entry.relativePath == 'null') {
+        continue;
+      }
+      final lower = entry.fileName.toLowerCase();
+      final supported = lower.endsWith('.json') ||
+          lower.endsWith('.png') ||
+          lower.endsWith('.jpg') ||
+          lower.endsWith('.jpeg');
+      if (!supported) continue;
+      if (!seenNames.add(entry.fileName)) continue;
+      entries.add(entry);
+    }
+    return entries;
+  }
+
+  /// Downloads new or updated book files from the book server.
+  /// Auto-discovers all .json/.png/.jpg files from the manifest — new
+  /// books added to the server appear in the app on the next check.
   static Future<bool> checkForBookUpdates() async {
     if (kIsWeb || _isBooksChecking) return false;
-    if (_ftpHost.isEmpty || _ftpUser.isEmpty || _ftpPassword.isEmpty) {
-      lastBooksStatus = 'ERROR: FTP credentials not configured';
-      debugPrint('Book Sync: Credentials not configured, skipping');
-      return false;
-    }
-
     _isBooksChecking = true;
-
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
     try {
-      debugPrint('Book Sync: Checking for new/updated book files...');
-
-      final ftpConnect = FTPConnect(
-        _ftpHost,
-        port: _ftpPort,
-        user: _ftpUser,
-        pass: _ftpPassword,
-        timeout: 30,
-      );
-
-      await ftpConnect.connect();
-      // Binary mode is required for image files — ASCII mode corrupts PNGs.
-      await ftpConnect.setTransferType(TransferType.binary);
-
-      // Discover book files in known remote folders. This supports server
-      // layouts where generated files are uploaded under /output.
-      final List<Map<String, dynamic>> remoteBookFiles = [];
-      final Set<String> seenRemoteKeys = {};
-
-      for (final remoteDir in _remoteBooksDirectories) {
-        final bool dirChanged = await ftpConnect.changeDirectory(remoteDir);
-        if (!dirChanged) {
-          debugPrint('Book Sync: Directory not found: $remoteDir');
-          continue;
-        }
-
-        final remoteFiles = await ftpConnect.listDirectoryContent();
-        for (final f in remoteFiles) {
-          final n = f.name.toLowerCase();
-          final isSupported = n.endsWith('.json') ||
-              n.endsWith('.png') ||
-              n.endsWith('.jpg') ||
-              n.endsWith('.jpeg');
-          if (!isSupported) continue;
-
-          final key = '$remoteDir/${f.name}';
-          if (seenRemoteKeys.add(key)) {
-            remoteBookFiles.add({'dir': remoteDir, 'file': f});
-          }
-        }
-      }
-
-      final jsonCount = remoteBookFiles
-          .where((e) => (e['file'] as dynamic)
-              .name
-              .toString()
-              .toLowerCase()
-              .endsWith('.json'))
-          .length;
-      final imageCount = remoteBookFiles.where((e) {
-        final name = (e['file'] as dynamic).name.toString().toLowerCase();
-        return name.endsWith('.png') ||
-            name.endsWith('.jpg') ||
-            name.endsWith('.jpeg');
-      }).length;
       debugPrint(
-          'Book Sync: Found $jsonCount book JSON(s) and $imageCount image(s) '
-          'across ${_remoteBooksDirectories.length} folder(s)');
+          'Book Sync: Checking for new/updated book files at ${BookServerConfig.baseUrl}...');
+
+      final manifestUri = fileUri('manifest.json');
+      final request = await client.getUrl(manifestUri).timeout(
+            _requestTimeout,
+            onTimeout: () => throw TimeoutException(
+                'manifest request timed out', _requestTimeout),
+          );
+      final response =
+          await request.close().timeout(_requestTimeout);
+      if (response.statusCode != HttpStatus.ok) {
+        await response.drain<void>();
+        lastBooksStatus =
+            'Server returned HTTP ${response.statusCode} — ${DateTime.now()}';
+        debugPrint('Book Sync: manifest HTTP ${response.statusCode}');
+        return false;
+      }
+      final body = await response.transform(utf8.decoder).join().timeout(
+            _requestTimeout,
+            onTimeout: () => throw TimeoutException(
+                'manifest read timed out', _requestTimeout),
+          );
+      final entries = parseManifest(jsonDecode(body));
+      final jsonCount =
+          entries.where((e) => e.fileName.toLowerCase().endsWith('.json')).length;
+      final imageCount = entries.length - jsonCount;
+      debugPrint(
+          'Book Sync: Manifest lists $jsonCount book JSON(s) and $imageCount image(s)');
 
       // Ensure local books directory exists.
       final String localBooksPath = await getLocalBooksPath();
@@ -154,25 +201,10 @@ class BookSyncService extends GetxService {
         await localDir.create(recursive: true);
       }
 
-      // Delete any existing local images once per app session to replace
-      // corrupted files from a previous ASCII-mode download.
-      if (!_staleImagesCleaned) {
-        for (final f in localDir.listSync().whereType<File>()) {
-          final n = f.path.toLowerCase();
-          if (n.endsWith('.png') || n.endsWith('.jpg') || n.endsWith('.jpeg')) {
-            await f.delete();
-            debugPrint(
-                'Book Sync: Removed stale image ${f.path.split('/').last}');
-          }
-        }
-        _staleImagesCleaned = true;
-      }
-
-      // Mirror local FTP cache to server state: remove local files that are
-      // no longer present on FTP, so deleted server books disappear in app.
-      final Set<String> remoteBaseNames = remoteBookFiles
-          .map((e) => (e['file'] as dynamic).name.toString())
-          .toSet();
+      // Mirror the local cache to server state: remove local files that
+      // are no longer in the manifest, so deleted server books disappear.
+      final Set<String> remoteBaseNames =
+          entries.map((e) => e.fileName).toSet();
       int removedCount = 0;
       for (final f in localDir.listSync().whereType<File>()) {
         final localName = f.path.split('/').last;
@@ -180,7 +212,8 @@ class BookSyncService extends GetxService {
         final isManagedType = lower.endsWith('.json') ||
             lower.endsWith('.png') ||
             lower.endsWith('.jpg') ||
-            lower.endsWith('.jpeg');
+            lower.endsWith('.jpeg') ||
+            lower.endsWith('.tmp');
         if (!isManagedType) continue;
         if (!remoteBaseNames.contains(localName)) {
           await f.delete();
@@ -193,67 +226,43 @@ class BookSyncService extends GetxService {
       int updatedCount = 0;
       int skippedCount = 0;
 
-      String? activeRemoteDir;
-      for (final remoteRef in remoteBookFiles) {
-        final String remoteName =
-            (remoteRef['file'] as dynamic).name.toString();
+      for (final entry in entries) {
+        final String localFilePath =
+            path.join(localBooksPath, entry.fileName);
+        final File localFile = File(localFilePath);
         try {
-          final String remoteDir = remoteRef['dir'] as String;
-          final dynamic remoteFile = remoteRef['file'];
-
-          if (activeRemoteDir != remoteDir) {
-            final bool moved = await ftpConnect.changeDirectory(remoteDir);
-            if (!moved) {
-              debugPrint('Book Sync: Failed to enter directory: $remoteDir');
-              continue;
-            }
-            activeRemoteDir = remoteDir;
-          }
-
-          final String localFilePath =
-              path.join(localBooksPath, remoteFile.name);
-          final File localFile = File(localFilePath);
-
           bool needsUpdate = true;
-
           if (await localFile.exists()) {
             final localStat = await localFile.stat();
-            // Use modifyTime if available, fall back to size.
-            final remoteModified = remoteFile.modifyTime;
-            if (remoteModified != null) {
-              if (!remoteModified.isAfter(localStat.modified)) {
-                needsUpdate = false;
-                skippedCount++;
-              }
-            } else if (remoteFile.size == localStat.size) {
-              needsUpdate = false;
-              skippedCount++;
-            }
+            final sizeDiffers =
+                entry.size != null && entry.size != localStat.size;
+            final newerOnServer = entry.mtime != null &&
+                entry.mtime!.isAfter(
+                    localStat.modified.add(const Duration(seconds: 1)));
+            needsUpdate = sizeDiffers || newerOnServer;
           }
-
-          if (needsUpdate) {
-            debugPrint('Book Sync: Downloading ${remoteFile.name}...');
-            final bool downloaded =
-                await ftpConnect.downloadFile(remoteFile.name, localFile);
-            if (downloaded) {
-              updatedCount++;
-              debugPrint('Book Sync: Downloaded ${remoteFile.name}');
-            } else {
-              debugPrint('Book Sync: Failed to download ${remoteFile.name}');
-            }
+          if (!needsUpdate) {
+            skippedCount++;
+            continue;
+          }
+          debugPrint('Book Sync: Downloading ${entry.fileName}...');
+          final downloaded =
+              await _downloadFile(client, entry, localFilePath);
+          if (downloaded) {
+            updatedCount++;
+            debugPrint('Book Sync: Downloaded ${entry.fileName}');
+          } else {
+            debugPrint('Book Sync: Failed to download ${entry.fileName}');
           }
         } catch (e) {
-          debugPrint('Book Sync: Error processing $remoteName: $e');
+          debugPrint('Book Sync: Error processing ${entry.fileName}: $e');
         }
       }
-
-      await ftpConnect.disconnect();
 
       debugPrint(
           'Book Sync: Done — Downloaded: $updatedCount, Removed: $removedCount, '
           'Unchanged: $skippedCount');
 
-      _isBooksChecking = false;
       if (updatedCount > 0 || removedCount > 0) {
         lastBooksStatus =
             'Downloaded $updatedCount, Removed $removedCount — ${DateTime.now()}';
@@ -263,17 +272,67 @@ class BookSyncService extends GetxService {
         debugPrint('Book Sync: All files up to date');
       }
       return updatedCount > 0 || removedCount > 0;
-    } on FTPConnectException catch (e) {
+    } on TimeoutException catch (e) {
+      lastBooksStatus = 'Timed out: $e';
+      debugPrint('Book Sync: Timeout: $e');
+      return false;
+    } on SocketException catch (e) {
       lastBooksStatus = 'Connection error: ${e.message}';
-      debugPrint('Book Sync: FTP Connection Error: ${e.message}');
-      _isBooksChecking = false;
+      debugPrint('Book Sync: Connection error: ${e.message}');
+      return false;
+    } on HttpException catch (e) {
+      lastBooksStatus = 'HTTP error: ${e.message}';
+      debugPrint('Book Sync: HTTP error: ${e.message}');
       return false;
     } catch (e) {
       lastBooksStatus = 'Error: $e';
       debugPrint('Book Sync: Error: $e');
+      return false;
+    } finally {
       _isBooksChecking = false;
+      client.close();
+    }
+  }
+
+  /// Downloads one manifest entry to [localPath] via a temp file, so a
+  /// failed or truncated download never replaces a good cached copy.
+  /// Returns true when the file was written.
+  static Future<bool> _downloadFile(
+      HttpClient client, BookManifestEntry entry, String localPath) async {
+    final tmpPath = '$localPath.tmp';
+    final request = await client.getUrl(fileUri(entry.relativePath)).timeout(
+          _requestTimeout,
+          onTimeout: () =>
+              throw TimeoutException('download timed out', _requestTimeout),
+        );
+    final response = await request.close().timeout(_requestTimeout);
+    if (response.statusCode != HttpStatus.ok) {
+      await response.drain<void>();
+      debugPrint(
+          'Book Sync: HTTP ${response.statusCode} for ${entry.relativePath}');
       return false;
     }
+    final bytes = await response
+        .fold<List<int>>(<int>[], (acc, chunk) => acc..addAll(chunk))
+        .timeout(_requestTimeout);
+    // A truncated download must not replace a good cached copy.
+    if (entry.size != null && bytes.length != entry.size) {
+      debugPrint(
+          'Book Sync: size mismatch for ${entry.fileName} '
+          '(got ${bytes.length}, expected ${entry.size}), discarding');
+      return false;
+    }
+    final tmpFile = File(tmpPath);
+    await tmpFile.writeAsBytes(bytes, flush: true);
+    await tmpFile.rename(localPath);
+    if (entry.mtime != null) {
+      try {
+        await File(localPath).setLastModified(entry.mtime!);
+      } catch (_) {
+        // Best effort — a wrong local mtime only costs a re-download.
+      }
+    }
+    return true;
   }
 
   /// Deletes all locally downloaded book files.

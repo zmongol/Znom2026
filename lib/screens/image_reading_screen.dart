@@ -5,7 +5,6 @@ import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/services/book_sync_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:get/get.dart';
 
 import '../Component/find_ctrls.dart';
@@ -15,10 +14,9 @@ final _bookCtrl = FindCtrl.book;
 /// Reader for image books: scanned PDF pages shown as full-screen images.
 ///
 /// Pages are `<pagePrefix>-p001.jpg` … (see [Book.imagePageFileName]).
-/// The Folk Tales book ships inside the app under
-/// `assets/pages/<pagePrefix>/` — no download needed. A downloaded copy
-/// from the Mini FTP sync (same files, same names) takes display priority
-/// when present. Swipe left/right (or Prev/Next / the slider) to turn
+/// All pages are downloaded from the book server into the local books
+/// folder — nothing is bundled in the app. Swipe left/right (or Prev/Next
+/// / the slider) to turn
 /// pages; pinch to zoom. The last-read page is saved with [ReadingProgress]
 /// (chapter 0, scroll offset = page index) so the details screen's
 /// Continue Reading banner can resume it.
@@ -55,9 +53,6 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
   late int _currentPage;
   String _booksDir = '';
   Set<int> _availablePages = {};
-  // Pages downloaded over FTP render from file; the rest render from the
-  // app assets. _availablePages is the union of both sources.
-  Set<int> _downloadedPages = {};
   bool _checking = true;
   String? _error;
 
@@ -89,8 +84,8 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
     super.dispose();
   }
 
-  /// Re-scan for this book's page files: the downloaded books folder
-  /// (FTP sync) plus the pages bundled in the app assets.
+  /// Re-scan for this book's page files in the downloaded books folder
+  /// (populated by the book-server sync).
   Future<void> _refreshAvailable() async {
     setState(() {
       _checking = true;
@@ -112,29 +107,10 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
           }
         }
       }
-      // Bundled pages live under assets/pages/<pagePrefix>/ — present from
-      // the first launch, no download needed.
-      final bundled = <int>{};
-      try {
-        final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-        final dirPrefix = 'assets/pages/${widget.book.pagePrefix}/';
-        final filePrefix = '${widget.book.pagePrefix}-p';
-        for (final p in manifest.listAssets()) {
-          if (!p.startsWith(dirPrefix) || !p.endsWith('.jpg')) continue;
-          final name = p.split('/').last;
-          if (!name.startsWith(filePrefix)) continue;
-          final numPart = name.substring(filePrefix.length, name.length - 4);
-          final n = int.tryParse(numPart);
-          if (n != null && n >= 1 && n <= _totalPages) bundled.add(n);
-        }
-      } catch (e) {
-        debugPrint('ImageReadingScreen: bundled page scan failed: $e');
-      }
       if (!mounted) return;
       setState(() {
         _booksDir = dir;
-        _downloadedPages = downloaded;
-        _availablePages = {...downloaded, ...bundled};
+        _availablePages = downloaded;
         _checking = false;
       });
     } catch (e) {
@@ -154,7 +130,7 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
     Get.snackbar(
       'Library sync',
       _availablePages.isEmpty
-          ? 'No pages downloaded yet — is the phone on Tailscale?'
+          ? 'No pages downloaded yet — check the internet connection and try again.'
           : '${_availablePages.length} of $_totalPages pages on this device.',
       snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 3),
@@ -336,26 +312,14 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
       );
     }
     final fileName = Book.imagePageFileName(widget.book.pagePrefix, pageNumber);
-    final Widget image;
-    if (_downloadedPages.contains(pageNumber)) {
-      // FTP copy (identical content) takes display priority.
-      image = Image.file(
-        File('$_booksDir/$fileName'),
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Center(
-          child: Text('Could not open page $pageNumber'),
-        ),
-      );
-    } else {
-      // Bundled in the app under assets/pages/<prefix>/.
-      image = Image.asset(
-        'assets/pages/${widget.book.pagePrefix}/$fileName',
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Center(
-          child: Text('Could not open page $pageNumber'),
-        ),
-      );
-    }
+    // All pages are server downloads rendered from local files.
+    final Widget image = Image.file(
+      File('$_booksDir/$fileName'),
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => Center(
+        child: Text('Could not open page $pageNumber'),
+      ),
+    );
     return Listener(
       onPointerDown: _pointerDown,
       onPointerMove: _pointerMove,
@@ -392,8 +356,8 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
             Text(
               _error ??
                   'This book is $_totalPages scanned pages. They download '
-                      'from your Mac Mini over Tailscale — check the phone is '
-                      'on Tailscale, then try again.',
+                      'from the Znom book server over the internet — check '
+                      'the connection, then try again.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
