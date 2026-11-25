@@ -11,6 +11,8 @@ import 'package:get/get.dart';
 import 'package:mongol/mongol.dart';
 
 import '../Component/find_ctrls.dart';
+import '../Component/MongolFonts.dart';
+import '../widgets/bounded_mongol_text.dart';
 import '../widgets/mongol_text_selector.dart';
 import 'search_screen.dart';
 
@@ -207,12 +209,21 @@ class _ReadingScreenState extends State<ReadingScreen> {
               ],
             )
           : AppBar(
-              title: Obx(() => Text(widget.book.title,
-                  style: TextStyle(
-                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? null
-                          : _bookCtrl.fontFamily.value,
-                      color: Colors.white))),
+              // The book title stands upright in vertical columns
+              // fitted to the bar — never sideways in a plain Text.
+              title: Obx(() => BoundedMongolText(
+                    widget.book.title,
+                    maxHeight: 42,
+                    maxColumns: 8,
+                    minFontSize: 8,
+                    style: TextStyle(
+                        fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                            ? MongolFonts.z52dardastig
+                            : _bookCtrl.fontFamily.value,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white),
+                  )),
               backgroundColor: AppColors.primary,
               actions: [
                 IconButton(
@@ -259,18 +270,18 @@ class _ReadingScreenState extends State<ReadingScreen> {
                   : null,
               icon: const Icon(Icons.chevron_left),
               label: SizedBox(
-                height: 22,
+                width: 56,
                 child: Obx(
-                  () => MongolText(
+                  () => BoundedMongolText(
                     UiStrings.prev,
+                    maxHeight: 30,
                     style: TextStyle(
                       fontSize: 13,
                       fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? null
+                          ? MongolFonts.z52dardastig
                           : _bookCtrl.fontFamily.value,
-                      color: _currentChapter > 0
-                          ? AppColors.primary
-                          : Colors.grey,
+                      color:
+                          _currentChapter > 0 ? AppColors.primary : Colors.grey,
                     ),
                   ),
                 ),
@@ -292,11 +303,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     child: LinearProgressIndicator(
                       value: totalChapters == 0
                           ? 0
-                          : (_currentChapter + _scrollFraction) /
-                              totalChapters,
+                          : (_currentChapter + _scrollFraction) / totalChapters,
                       minHeight: 3,
-                      backgroundColor:
-                          AppColors.secondary.withOpacity(0.18),
+                      backgroundColor: AppColors.secondary.withOpacity(0.18),
                       valueColor:
                           const AlwaysStoppedAnimation(AppColors.secondary),
                     ),
@@ -310,14 +319,15 @@ class _ReadingScreenState extends State<ReadingScreen> {
                   : null,
               icon: const Icon(Icons.chevron_right),
               label: SizedBox(
-                height: 22,
+                width: 56,
                 child: Obx(
-                  () => MongolText(
+                  () => BoundedMongolText(
                     UiStrings.next,
+                    maxHeight: 30,
                     style: TextStyle(
                       fontSize: 13,
                       fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? null
+                          ? MongolFonts.z52dardastig
                           : _bookCtrl.fontFamily.value,
                       color: _currentChapter < totalChapters - 1
                           ? AppColors.primary
@@ -407,18 +417,22 @@ class _ReadingScreenState extends State<ReadingScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
-                            height: 44,
-                            child: Obx(
-                              () => MongolText(
-                                UiStrings.chapters,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily:
-                                      _bookCtrl.fontFamily.value.isEmpty
-                                          ? null
-                                          : _bookCtrl.fontFamily.value,
-                                  color: textColor ?? AppColors.primary,
+                            width: 170,
+                            child: Center(
+                              child: Obx(
+                                () => BoundedMongolText(
+                                  UiStrings.chapters,
+                                  maxHeight: 44,
+                                  maxColumns: 5,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily:
+                                        _bookCtrl.fontFamily.value.isEmpty
+                                            ? MongolFonts.z52dardastig
+                                            : _bookCtrl.fontFamily.value,
+                                    color: textColor ?? AppColors.primary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -438,11 +452,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed:
-                                  _currentChapter < totalChapters - 1
-                                      ? () =>
-                                          _goToChapter(_currentChapter + 1)
-                                      : null,
+                              onPressed: _currentChapter < totalChapters - 1
+                                  ? () => _goToChapter(_currentChapter + 1)
+                                  : null,
                               icon: const Icon(Icons.chevron_right),
                               label: const Text('Next chapter'),
                               iconAlignment: IconAlignment.end,

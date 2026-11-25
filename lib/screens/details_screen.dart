@@ -11,6 +11,8 @@ import 'package:velocity_x/velocity_x.dart';
 import 'package:get/get.dart';
 
 import '../Component/find_ctrls.dart';
+import '../Component/MongolFonts.dart';
+import '../widgets/bounded_mongol_text.dart';
 import '../widgets/book_info.dart';
 import '../widgets/chapter_card.dart';
 import 'Donate.dart';
@@ -29,13 +31,22 @@ class DetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        // Book title upright in vertical columns fitted to the bar —
+        // never sideways in a plain Text.
         title: Obx(
-          () => Text(book.title,
-              style: TextStyle(
-                  fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                      ? null
-                      : _bookCtrl.fontFamily.value,
-                  color: Colors.white)),
+          () => BoundedMongolText(
+            book.title,
+            maxHeight: 42,
+            maxColumns: 8,
+            minFontSize: 8,
+            style: TextStyle(
+                fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                    ? MongolFonts.z52dardastig
+                    : _bookCtrl.fontFamily.value,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white),
+          ),
         ),
         backgroundColor: AppColors.primary,
         actions: [
@@ -255,15 +266,32 @@ class _ContinueReadingBanner extends StatelessWidget {
                             fontSize: 14,
                           )),
                       const SizedBox(height: 2),
-                      Text(
-                        chapterName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                      // Chapter names are Mongolian — they stand in an
+                      // upright bounded column, not a sideways row.
+                      // Pure Latin/digit labels ("1 - 01") stay a Text.
+                      if (RegExp(r'[\u1800-\u18AF]').hasMatch(chapterName))
+                        BoundedMongolText(
+                          chapterName,
+                          maxHeight: 34,
+                          maxColumns: 4,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                                ? MongolFonts.z52dardastig
+                                : _bookCtrl.fontFamily.value,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        )
+                      else
+                        Text(
+                          chapterName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
                     ],
                   ),
                 ),

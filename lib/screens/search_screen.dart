@@ -3,6 +3,7 @@ import 'package:book_app/Component/find_ctrls.dart';
 import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/screens/search_results_screen.dart';
+import 'package:book_app/widgets/bounded_mongol_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mongol/mongol.dart';
@@ -82,159 +83,194 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // ── Mongolian-first header ──────────────────────────────────
-          Container(
-            width: double.infinity,
-            color: isDark ? const Color(0xFF1A2332) : Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 78,
-                  child: MongolText(
-                    UiStrings.searchBooks,
-                    style: TextStyle(
-                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? MongolFonts.z52agolatig
-                          : _bookCtrl.fontFamily.value,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.95)
-                          : const Color(0xFF2D3436),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // The paper area takes a bounded share of whatever height
+          // the body actually has (less when the keyboard is open).
+          final paperHeight =
+              (constraints.maxHeight * 0.42).clamp(150.0, 232.0).toDouble();
+          return Column(
+            children: [
+              // ── Mongolian-first header ──────────────────────────────────
+              Container(
+                width: double.infinity,
+                color: isDark ? const Color(0xFF1A2332) : Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BoundedMongolText(
+                      UiStrings.searchBooks,
+                      maxHeight: 78,
+                      maxColumns: 4,
+                      style: TextStyle(
+                        fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                            ? MongolFonts.z52agolatig
+                            : _bookCtrl.fontFamily.value,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.95)
+                            : const Color(0xFF2D3436),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Search Books',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        letterSpacing: 0.4,
+                        color: isDark ? Colors.white54 : Colors.black45,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Search Books',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    letterSpacing: 0.4,
-                    color: isDark ? Colors.white54 : Colors.black45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // ── Text area + side buttons ──────────────────────────────────
-          Expanded(
-            child: Container(
-              color: Colors.grey.shade400,
-              child: Row(
-                children: [
-                  // White paper text area (vertical Mongolian, system keyboard)
-                  Expanded(
-                    child: Container(
-                      color: isDark ? const Color(0xFF1A2332) : Colors.white,
-                      padding: const EdgeInsets.all(4),
-                      child: MongolTextField(
-                        controller: _controller,
-                        scrollController: _scrollController,
-                        showCursor: true,
-                        expands: true,
-                        maxLines: null,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          hintText: 'ᡳᡪᡧ ᡥᡪᡱᢔᡪᡫ…',
-                          hintStyle: TextStyle(
-                            fontFamily: MongolFonts.z52agolatig,
-                            color: Colors.black38,
-                            fontSize: 18,
+              ),
+              // ── Text area + side buttons ──────────────────────────────────
+              // Bounded height: the field used to expand to the whole
+              // screen, leaving a huge empty box with the query squeezed
+              // into one thin column at the edge. A search query is a word
+              // or two — it gets a paper area a few columns tall instead.
+              SizedBox(
+                height: paperHeight,
+                child: Container(
+                  color: Colors.grey.shade400,
+                  child: Row(
+                    children: [
+                      // White paper text area (vertical Mongolian, system keyboard)
+                      Expanded(
+                        child: Container(
+                          color:
+                              isDark ? const Color(0xFF1A2332) : Colors.white,
+                          padding: const EdgeInsets.all(4),
+                          child: Stack(
+                            children: [
+                              MongolTextField(
+                                controller: _controller,
+                                scrollController: _scrollController,
+                                showCursor: true,
+                                expands: true,
+                                maxLines: null,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                style: TextStyle(
+                                  fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                                      ? MongolFonts.z52agolatig
+                                      : _bookCtrl.fontFamily.value,
+                                  fontSize: 24,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              // App-owned hint, shown ONLY while the field
+                              // is empty. The package's decoration hint
+                              // could stay painted over typed text (the
+                              // user's phone showed the query ghosted by
+                              // a faint second column), so the hint is
+                              // not left to the decorator: this screen
+                              // already rebuilds on every text change.
+                              if (_controller.text.isEmpty)
+                                const IgnorePointer(
+                                  child: MongolText(
+                                    'ᡳᡪᡧ ᡥᡪᡱᢔᡪᡫ…',
+                                    style: TextStyle(
+                                      fontFamily: MongolFonts.z52agolatig,
+                                      color: Colors.black38,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        style: TextStyle(
-                          fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                              ? MongolFonts.z52agolatig
-                              : _bookCtrl.fontFamily.value,
-                          fontSize: 22,
-                          color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      // Thin divider
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(
+                              color: Colors.grey.shade300,
+                              width:
+                                  1 / MediaQuery.of(context).devicePixelRatio,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  // Thin divider
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: Colors.grey.shade300,
-                          width: 1 / MediaQuery.of(context).devicePixelRatio,
+                      // Side buttons column
+                      Container(
+                        width: 50,
+                        color: isDark ? const Color(0xFF1A2332) : Colors.white,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Copy typed text
+                            IconButton(
+                              icon: const Icon(Icons.copy),
+                              tooltip: 'Copy',
+                              onPressed: () {
+                                final text = _controller.text;
+                                if (text.isNotEmpty) {
+                                  Clipboard.setData(ClipboardData(text: text));
+                                }
+                              },
+                            ),
+                            // Paste from clipboard
+                            IconButton(
+                              icon: const Icon(Icons.paste),
+                              tooltip: 'Paste',
+                              onPressed: () async {
+                                final data = await Clipboard.getData(
+                                    Clipboard.kTextPlain);
+                                if (data?.text != null) {
+                                  final text = data!.text!;
+                                  final sel = _controller.selection;
+                                  final old = _controller.text;
+                                  final start =
+                                      sel.isValid ? sel.start : old.length;
+                                  final end =
+                                      sel.isValid ? sel.end : old.length;
+                                  _controller.text =
+                                      old.replaceRange(start, end, text);
+                                  _controller.selection =
+                                      TextSelection.collapsed(
+                                          offset: start + text.length);
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ),
-                  // Side buttons column
-                  Container(
-                    width: 50,
-                    color: isDark ? const Color(0xFF1A2332) : Colors.white,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Copy typed text
-                        IconButton(
-                          icon: const Icon(Icons.copy),
-                          tooltip: 'Copy',
-                          onPressed: () {
-                            final text = _controller.text;
-                            if (text.isNotEmpty) {
-                              Clipboard.setData(ClipboardData(text: text));
-                            }
-                          },
-                        ),
-                        // Paste from clipboard
-                        IconButton(
-                          icon: const Icon(Icons.paste),
-                          tooltip: 'Paste',
-                          onPressed: () async {
-                            final data =
-                                await Clipboard.getData(Clipboard.kTextPlain);
-                            if (data?.text != null) {
-                              final text = data!.text!;
-                              final sel = _controller.selection;
-                              final old = _controller.text;
-                              final start =
-                                  sel.isValid ? sel.start : old.length;
-                              final end = sel.isValid ? sel.end : old.length;
-                              _controller.text =
-                                  old.replaceRange(start, end, text);
-                              _controller.selection = TextSelection.collapsed(
-                                  offset: start + text.length);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // ── Search button (system keyboards have no Mongolian search key)
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _doSearch,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Search'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+              // Remaining space stays empty background; the Search button
+              // keeps its place at the bottom.
+              const Expanded(child: SizedBox()),
+              // ── Search button (system keyboards have no Mongolian search key)
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _doSearch,
+                      icon: const Icon(Icons.search),
+                      label: const Text('Search'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

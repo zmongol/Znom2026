@@ -14,6 +14,7 @@ import 'package:mongol/mongol.dart';
 
 import '../Component/MongolFonts.dart';
 import '../Component/find_ctrls.dart';
+import '../widgets/bounded_mongol_text.dart';
 import 'Donate.dart';
 
 final _bookCtrl = FindCtrl.book;
@@ -138,8 +139,7 @@ class HomeScreen extends StatelessWidget {
                 return SliverToBoxAdapter(child: _buildWelcomeState(context));
               }
               return SliverGrid(
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
@@ -227,9 +227,7 @@ class HomeScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.cardDark
-                    : const Color(0xFF2D3436),
+                color: isDark ? AppColors.cardDark : const Color(0xFF2D3436),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
@@ -345,16 +343,22 @@ class HomeScreen extends StatelessWidget {
           value: "FontSize",
           child: Row(
             children: [
-              const Icon(Icons.text_fields,
-                  color: AppColors.primary, size: 20),
+              const Icon(Icons.text_fields, color: AppColors.primary, size: 20),
               const SizedBox(width: 12),
               Obx(
-                () => Text(
-                  UiStrings.fontSize,
-                  style: TextStyle(
-                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? null
-                          : _bookCtrl.fontFamily.value),
+                () => SizedBox(
+                  width: 120,
+                  child: BoundedMongolText(
+                    UiStrings.fontSize,
+                    maxHeight: 44,
+                    maxColumns: 5,
+                    style: TextStyle(
+                        fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                            ? MongolFonts.z52dardastig
+                            : _bookCtrl.fontFamily.value,
+                        fontSize: 13.5,
+                        color: Colors.black87),
+                  ),
                 ),
               ),
             ],
@@ -368,12 +372,19 @@ class HomeScreen extends StatelessWidget {
                   color: AppColors.primary, size: 20),
               const SizedBox(width: 12),
               Obx(
-                () => Text(
-                  UiStrings.fontFamily,
-                  style: TextStyle(
-                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? null
-                          : _bookCtrl.fontFamily.value),
+                () => SizedBox(
+                  width: 120,
+                  child: BoundedMongolText(
+                    UiStrings.fontFamily,
+                    maxHeight: 44,
+                    maxColumns: 5,
+                    style: TextStyle(
+                        fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                            ? MongolFonts.z52dardastig
+                            : _bookCtrl.fontFamily.value,
+                        fontSize: 13.5,
+                        color: Colors.black87),
+                  ),
                 ),
               ),
             ],
@@ -387,12 +398,19 @@ class HomeScreen extends StatelessWidget {
                   color: AppColors.primary, size: 20),
               const SizedBox(width: 12),
               Obx(
-                () => Text(
-                  UiStrings.darkMode,
-                  style: TextStyle(
-                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                          ? null
-                          : _bookCtrl.fontFamily.value),
+                () => SizedBox(
+                  width: 120,
+                  child: BoundedMongolText(
+                    UiStrings.darkMode,
+                    maxHeight: 44,
+                    maxColumns: 5,
+                    style: TextStyle(
+                        fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                            ? MongolFonts.z52dardastig
+                            : _bookCtrl.fontFamily.value,
+                        fontSize: 13.5,
+                        color: Colors.black87),
+                  ),
                 ),
               ),
               const Spacer(),
@@ -432,9 +450,8 @@ class _ContinueReadingRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final progress = ReadingProgress.load(book.title);
     final fraction = bookProgressFraction(book) ?? 0;
-    final chapterLabel = book.isImageBook
-        ? 'Page ${((progress?.$2.round() ?? 0) + 1)} / ${book.pageCount}'
-        : '${UiStrings.chapter} ${((progress?.$1 ?? 0) + 1)} / ${book.chapters.length}';
+    final chapterNumberLabel =
+        '${((progress?.$1 ?? 0) + 1)} / ${book.chapters.length}';
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -460,8 +477,7 @@ class _ContinueReadingRow extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isDark ? Theme.of(context).cardColor : Colors.white,
-              border: Border.all(
-                  color: AppColors.primary.withOpacity(0.35)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.35)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -481,34 +497,61 @@ class _ContinueReadingRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        height: 58,
-                        child: Obx(
-                          () => MongolText(
-                            book.title,
-                            maxLines: 2,
-                            style: TextStyle(
-                              fontFamily:
-                                  _bookCtrl.fontFamily.value.isEmpty
-                                      ? MongolFonts.z52dardastig
-                                      : _bookCtrl.fontFamily.value,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.95)
-                                  : const Color(0xFF2D3436),
-                            ),
+                      Obx(
+                        () => BoundedMongolText(
+                          book.title,
+                          maxHeight: 58,
+                          maxColumns: 3,
+                          style: TextStyle(
+                            fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                                ? MongolFonts.z52dardastig
+                                : _bookCtrl.fontFamily.value,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.95)
+                                : const Color(0xFF2D3436),
                           ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        chapterLabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.white60 : Colors.black54,
+                      // Caption: the Mongolian word stands in an upright
+                      // column; only the numbers stay Latin.
+                      if (book.isImageBook)
+                        Text(
+                          'Page ${((progress?.$2.round() ?? 0) + 1)} / ${book.pageCount}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        )
+                      else
+                        Row(
+                          children: [
+                            Obx(
+                              () => BoundedMongolText(
+                                UiStrings.chapter,
+                                maxHeight: 28,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                                      ? MongolFonts.z52dardastig
+                                      : _bookCtrl.fontFamily.value,
+                                  color:
+                                      isDark ? Colors.white60 : Colors.black54,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              chapterNumberLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? Colors.white60 : Colors.black54,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                       const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(3),
@@ -517,8 +560,8 @@ class _ContinueReadingRow extends StatelessWidget {
                           minHeight: 3,
                           backgroundColor:
                               AppColors.secondary.withOpacity(0.18),
-                          valueColor: const AlwaysStoppedAnimation(
-                              AppColors.secondary),
+                          valueColor:
+                              const AlwaysStoppedAnimation(AppColors.secondary),
                         ),
                       ),
                     ],
@@ -584,8 +627,8 @@ class _FeaturedBookCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.logoPink,
                       borderRadius: BorderRadius.circular(10),

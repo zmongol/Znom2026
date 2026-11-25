@@ -39,17 +39,21 @@ class ChapterCard extends StatelessWidget {
                 quarterTurns: 0,
                 child: Align(
                   alignment: Alignment.topCenter,
-                  child: MongolText(
-                      'ᡴᡭᡬᢑᡭᡬᡨ ${chapter.chapterNumber} : \n${chapter.chapterTitle}',
-                      maxLines: 2,
-                      style: TextStyle(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.95)
-                              : Colors.black,
-                          fontFamily:
-                              Get.find<FontService>().fontFamily.value.isEmpty
-                                  ? null
-                                  : Get.find<FontService>().fontFamily.value)),
+                  child: ClipRect(
+                    child: MongolText(
+                        'ᡴᡭᡬᢑᡭᡬᡨ ${chapter.chapterNumber} : \n${chapter.chapterTitle}',
+                        maxLines: 2,
+                        style: TextStyle(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.95)
+                                : Colors.black,
+                            fontFamily: Get.find<FontService>()
+                                    .fontFamily
+                                    .value
+                                    .isEmpty
+                                ? null
+                                : Get.find<FontService>().fontFamily.value)),
+                  ),
                 ),
               ),
             ),

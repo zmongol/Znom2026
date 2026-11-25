@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../Component/find_ctrls.dart';
+import '../Component/MongolFonts.dart';
+import '../widgets/bounded_mongol_text.dart';
 
 final _bookCtrl = FindCtrl.book;
 
@@ -211,12 +213,21 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Obx(() => Text(widget.book.title,
-            style: TextStyle(
-                fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                    ? null
-                    : _bookCtrl.fontFamily.value,
-                color: Colors.white))),
+        // Book title upright in vertical columns fitted to the bar —
+        // never sideways in a plain Text.
+        title: Obx(() => BoundedMongolText(
+              widget.book.title,
+              maxHeight: 42,
+              maxColumns: 8,
+              minFontSize: 8,
+              style: TextStyle(
+                  fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                      ? MongolFonts.z52dardastig
+                      : _bookCtrl.fontFamily.value,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white),
+            )),
         backgroundColor: AppColors.primary,
         actions: [
           IconButton(
@@ -344,8 +355,7 @@ class _ImageReadingScreenState extends State<ImageReadingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.menu_book_rounded,
-                size: 56, color: AppColors.primary),
+            Icon(Icons.menu_book_rounded, size: 56, color: AppColors.primary),
             const SizedBox(height: 16),
             Text(
               'Pages not downloaded yet',

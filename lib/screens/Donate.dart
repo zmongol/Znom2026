@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../Component/MongolFonts.dart';
 import 'package:book_app/core/constants/app_colors.dart';
+import '../widgets/bounded_mongol_text.dart';
 import '../global_controllers/books_ctrl.dart';
 
 class Donation extends StatelessWidget {
@@ -15,13 +16,31 @@ class Donation extends StatelessWidget {
     final _bookCtrl = Get.find<BookCtrl>();
     return Scaffold(
       appBar: AppBar(
-        title: Obx(
-          () => Text('Zcode ᡳᡪᢇ ᡥᢚᡧ',
-              style: TextStyle(
-                  fontFamily: _bookCtrl.fontFamily.value.isEmpty
-                      ? MongolFonts.z52ordostig
-                      : _bookCtrl.fontFamily.value,
-                  color: Colors.white)),
+        // 'Zcode' stays Latin; the Mongolian words stand upright in
+        // vertical columns fitted to the bar — never sideways.
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Zcode ',
+                style: TextStyle(color: Colors.white, fontSize: 17)),
+            SizedBox(
+              width: 110,
+              child: Obx(
+                () => BoundedMongolText(
+                  'ᡳᡪᢇ ᡥᢚᡧ',
+                  maxHeight: 40,
+                  maxColumns: 5,
+                  style: TextStyle(
+                      fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                          ? MongolFonts.z52ordostig
+                          : _bookCtrl.fontFamily.value,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white),
+                ),
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         backgroundColor: Color.fromARGB(255, 164, 166, 168),

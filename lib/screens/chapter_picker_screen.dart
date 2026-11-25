@@ -4,9 +4,10 @@ import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/widgets/chapter_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mongol/mongol.dart';
 
 import '../Component/find_ctrls.dart';
+import '../Component/MongolFonts.dart';
+import '../widgets/bounded_mongol_text.dart';
 
 /// Chapter picker for the text reader. Chapters whose titles carry a
 /// volume prefix ("1 - 01" … "4 - 18", as the 91-chapter novel does)
@@ -57,13 +58,15 @@ class ChapterPickerScreen extends StatelessWidget {
         title: Row(
           children: [
             SizedBox(
-              height: 42,
+              width: 130,
               child: Obx(
-                () => MongolText(
+                () => BoundedMongolText(
                   UiStrings.chapters,
+                  maxHeight: 42,
+                  maxColumns: 5,
                   style: TextStyle(
                     fontFamily: bookCtrl.fontFamily.value.isEmpty
-                        ? null
+                        ? MongolFonts.z52dardastig
                         : bookCtrl.fontFamily.value,
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -90,13 +93,14 @@ class ChapterPickerScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     SizedBox(
-                      height: 40,
+                      width: 70,
                       child: Obx(
-                        () => MongolText(
+                        () => BoundedMongolText(
                           UiStrings.volume,
+                          maxHeight: 40,
                           style: TextStyle(
                             fontFamily: bookCtrl.fontFamily.value.isEmpty
-                                ? null
+                                ? MongolFonts.z52dardastig
                                 : bookCtrl.fontFamily.value,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -127,8 +131,8 @@ class ChapterPickerScreen extends StatelessWidget {
                   final index = group.$2[j];
                   final isCurrent = index == currentChapter;
                   return Container(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 4, vertical: 6),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                     decoration: isCurrent
                         ? BoxDecoration(
                             border: Border.all(

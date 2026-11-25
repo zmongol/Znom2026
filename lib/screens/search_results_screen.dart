@@ -8,6 +8,7 @@ import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/models/search_result.dart';
 import 'package:book_app/screens/search_detail_screen.dart';
 import 'package:book_app/services/book_search_service.dart';
+import 'package:book_app/widgets/bounded_mongol_text.dart';
 
 /// Displays search results as left-to-right columns of Mongolian text.
 /// Each column represents one matching chapter — tap to open the detail viewer.
@@ -67,18 +68,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  height: 84,
-                  child: MongolText(
-                    UiStrings.searchResults,
-                    style: TextStyle(
-                      fontFamily: fontFamily,
-                      fontSize: 21,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.95)
-                          : const Color(0xFF2D3436),
-                    ),
+                BoundedMongolText(
+                  UiStrings.searchResults,
+                  maxHeight: 84,
+                  maxColumns: 5,
+                  style: TextStyle(
+                    fontFamily: fontFamily,
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.95)
+                        : const Color(0xFF2D3436),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -98,31 +98,32 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             child: _results.isEmpty
                 ? _buildEmpty(isDark)
                 : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              itemCount: _results.length,
-              itemBuilder: (context, i) {
-                final result = _results[i];
-                return Padding(
-                  padding: EdgeInsets.only(left: i == 0 ? 0 : 10),
-                  child: _ResultCard(
-                    result: result,
-                    fontFamily: fontFamily,
-                    isDark: isDark,
-                    colorIndex: i,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SearchDetailScreen(
-                          allMatches: _allMatches,
-                          initialIndex: _globalIndexFor(result),
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    itemCount: _results.length,
+                    itemBuilder: (context, i) {
+                      final result = _results[i];
+                      return Padding(
+                        padding: EdgeInsets.only(left: i == 0 ? 0 : 10),
+                        child: _ResultCard(
+                          result: result,
+                          fontFamily: fontFamily,
+                          isDark: isDark,
+                          colorIndex: i,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SearchDetailScreen(
+                                allMatches: _allMatches,
+                                initialIndex: _globalIndexFor(result),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-                ),
           ),
         ],
       ),
@@ -316,8 +317,7 @@ class _ResultCard extends StatelessWidget {
                                     style: TextStyle(
                                       fontFamily: fontFamily,
                                       fontSize: 18,
-                                      backgroundColor:
-                                          AppColors.highlightAmber,
+                                      backgroundColor: AppColors.highlightAmber,
                                       color: Colors.black87,
                                       fontWeight: FontWeight.w800,
                                     ),

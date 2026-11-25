@@ -1,5 +1,6 @@
 import 'package:book_app/Component/font_scale.dart';
 import 'package:book_app/core/services/font_service.dart';
+import 'package:book_app/widgets/bounded_mongol_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:velocity_x/velocity_x.dart';
@@ -21,72 +22,54 @@ class _FontSize extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final family = Get.find<FontService>().fontFamily.value;
     return Material(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           20.heightBox,
-          Text(
-            "ᡥᡭᡬᢔᡭᡬᡨ ᡭᡧ ᢊᡪᢎᢛᡬᡫᡨ ᢔᡭᡪᢊᡱᡱᡭᡪᡪᡳ",
-            style: TextStyle(
-              fontFamily: Get.find<FontService>().fontFamily.value,
-              fontSize: 18,
+          // Heading and samples stand upright in vertical columns —
+          // never sideways rows.
+          Center(
+            child: SizedBox(
+              width: 260,
+              child: BoundedMongolText(
+                "ᡥᡭᡬᢔᡭᡬᡨ ᡭᡧ ᢊᡪᢎᢛᡬᡫᡨ ᢔᡭᡪᢊᡱᡱᡭᡪᡪᡳ",
+                maxHeight: 62,
+                maxColumns: 6,
+                style: TextStyle(
+                  fontFamily: family,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ).centered(),
+          ),
           20.heightBox,
-          ListTile(
-            onTap: () {
-              onTap(FontScale.large);
-            },
-            trailing: selectedScale == FontScale.large
-                ? Icon(
-                    Icons.check,
-                    color: context.primaryColor,
-                  )
-                : null,
-            title: Text(
-              "ᢘᡭᢎᡳ",
-              style: TextStyle(
-                  fontFamily: Get.find<FontService>().fontFamily.value,
-                  fontSize: 16),
-            ),
-          ),
-          ListTile(
-            onTap: () {
-              onTap(FontScale.medium);
-            },
-            trailing: selectedScale == FontScale.medium
-                ? Icon(
-                    Icons.check,
-                    color: context.primaryColor,
-                  )
-                : null,
-            title: Text(
-              "ᢘᡭᢎᢙᡧ",
-              style: TextStyle(
-                  fontFamily: Get.find<FontService>().fontFamily.value,
-                  fontSize: 16),
-            ),
-          ),
-          ListTile(
-            onTap: () {
-              onTap(FontScale.regular);
-            },
-            trailing: selectedScale == FontScale.regular
-                ? Icon(
-                    Icons.check,
-                    color: context.primaryColor,
-                  )
-                : null,
-            title: Text(
-              "ᡳᡪᢉᡨ",
-              style: TextStyle(
-                  fontFamily: Get.find<FontService>().fontFamily.value,
-                  fontSize: 16),
-            ),
-          ),
+          _tile(context, family, FontScale.large, "ᢘᡭᢎᡳ"),
+          _tile(context, family, FontScale.medium, "ᢘᡭᢎᢙᡧ"),
+          _tile(context, family, FontScale.regular, "ᡳᡪᢉᡨ"),
           20.heightBox,
         ],
+      ),
+    );
+  }
+
+  Widget _tile(
+      BuildContext context, String family, double scale, String label) {
+    return ListTile(
+      onTap: () => onTap(scale),
+      trailing: selectedScale == scale
+          ? Icon(
+              Icons.check,
+              color: context.primaryColor,
+            )
+          : null,
+      title: BoundedMongolText(
+        label,
+        maxHeight: 54,
+        maxColumns: 3,
+        style: TextStyle(fontFamily: family, fontSize: 16),
       ),
     );
   }

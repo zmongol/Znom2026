@@ -1,12 +1,13 @@
 import 'package:book_app/Component/MongolFonts.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mongol/mongol.dart';
 
 import '../Component/find_ctrls.dart';
+import 'bounded_mongol_text.dart';
 
 /// Mongolian-first section header: the Z52 label as the main text
-/// (vertical Mongolian, wrapping into columns) with the small English
+/// (upright vertical columns, height-bounded so a long word can never
+/// spill over the caption or the content below) with the small English
 /// caption beneath it — the pattern approved for the app's chrome.
 class SectionHeader extends StatelessWidget {
   final String z52;
@@ -20,25 +21,24 @@ class SectionHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 86,
-          child: Obx(
-            () => MongolText(
-              z52,
-              style: TextStyle(
-                fontFamily: bookCtrl.fontFamily.value.isEmpty
-                    ? MongolFonts.z52dardastig
-                    : bookCtrl.fontFamily.value,
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? Colors.white.withOpacity(0.95)
-                    : const Color(0xFF2D3436),
-              ),
+        Obx(
+          () => BoundedMongolText(
+            z52,
+            maxHeight: 88,
+            maxColumns: 4,
+            style: TextStyle(
+              fontFamily: bookCtrl.fontFamily.value.isEmpty
+                  ? MongolFonts.z52dardastig
+                  : bookCtrl.fontFamily.value,
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? Colors.white.withOpacity(0.95)
+                  : const Color(0xFF2D3436),
             ),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           english,
           style: TextStyle(
