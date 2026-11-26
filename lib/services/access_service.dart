@@ -14,8 +14,10 @@ import 'book_catalog.dart';
 /// Znom's Google OAuth client ids — filled in when Znom's own Google
 /// Cloud project is created. While a platform's id is empty, Google
 /// sign-in is simply unavailable there (Apple sign-in is unaffected).
-const String kZnomGoogleIosClientId = '';
-const String kZnomGoogleServerClientId = '';
+const String kZnomGoogleIosClientId =
+    '914447329-i4m2ec7h54bl8s4km78b3kmdg94sh5e3.apps.googleusercontent.com';
+const String kZnomGoogleServerClientId =
+    '914447329-i0hdciilb2bv9bdfp14usbgm7daadqql.apps.googleusercontent.com';
 
 /// Owns everything about charging: the shared Zmongol account, the
 /// server catalogue, and who may read what.
