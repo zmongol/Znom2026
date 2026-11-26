@@ -80,4 +80,30 @@ class UiStrings {
 
   /// Pre-existing — "read" button label on the book details page.
   static const String read = 'ᡥᡭᡪᢊᢔᡬᡫᡨ';
+
+  // ── Charging (added 26 Nov 2026; DRAFTS, same status as above) ───
+
+  /// DRAFT — "Энэ бүлэг түгжээтэй" (This chapter is locked)
+  static const String lockedChapter =
+      'ᡥᡱᡧ ᡴᡭᡬᢑᡭᡬᡨ ᢘᡭᡬᢊᢛᡬᢜᡪᢙᡪᡫ';
+
+  /// DRAFT — "Түгжээ нээх" (Unlock)
+  static const String unlock = 'ᢘᡭᡬᢊᢛᡬᢜᡧ ᡯᡪᢊᡪᢋᡭ';
+
+  /// DRAFT — "Эхний гурван бүлэг үнэгүй" (The first three chapters are free)
+  static const String firstThreeFree =
+      'ᡥᢊᡬᡧ ᡳ ᢈᡭᢞᡳᡪᡧ ᡴᡭᡬᢑᡭᡬᡨ ᡥᡭᡬᡱᡪᢋᡭᡫ';
+
+  /// DRAFT — "Нэвтрэх" (Sign in)
+  static const String signIn = 'ᡯᡪᡳᢙᡪᢞᡪᢋᡭ';
+
+  /// DRAFT — "Бүртгэл" (Account)
+  static const String account = 'ᡴᡭᡬᢞᡬᡭᡪᢊᡪᢐ';
+
+  /// DRAFT — "Худалдан авалт сэргээх" (Restore purchases)
+  static const String restorePurchases =
+      'ᡸᡭᢙᡪᢑᢙᡭᡧ ᡥᡪᡳᡪᢑᢙᡧ ᢔᡪᢞᢋᡭᢋᡭ';
+
+  /// DRAFT — "Бүх номыг нээх" (Unlock all the books)
+  static const String unlockAllBooks = 'ᡴᡭᡬᢋᡭ ᡯᡭᢍ ᡫ ᡯᡪᢊᡪᢋᡭ';
 }

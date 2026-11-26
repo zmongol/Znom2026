@@ -1,6 +1,7 @@
 import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/models/books/book_model.dart';
+import 'package:book_app/services/access_service.dart';
 import 'package:book_app/widgets/chapter_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -142,6 +143,7 @@ class ChapterPickerScreen extends StatelessWidget {
                         : null,
                     child: ChapterCard(
                       chapter: book.chapters[index],
+                      locked: !AccessService.canOpenChapter(book, index),
                       press: () => Navigator.pop(context, index),
                     ),
                   );

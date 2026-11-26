@@ -4,6 +4,8 @@ import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_chapter_model.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/screens/chapter_picker_screen.dart';
+import 'package:book_app/screens/paywall_screen.dart';
+import 'package:book_app/services/access_service.dart';
 import 'package:book_app/widgets/reader_settings_sheet.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -145,6 +147,50 @@ class _ReadingScreenState extends State<ReadingScreen> {
     } else {
       _scrollFraction = fraction;
     }
+  }
+
+  Widget _lockedBody(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline,
+                size: 44, color: AppColors.primary),
+            const SizedBox(height: 16),
+            Obx(
+              () => BoundedMongolText(
+                UiStrings.lockedChapter,
+                maxHeight: 60,
+                maxColumns: 6,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: _bookCtrl.fontFamily.value.isEmpty
+                      ? MongolFonts.z52dardastig
+                      : _bookCtrl.fontFamily.value,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text('This chapter is locked',
+                style: TextStyle(color: Colors.black54, fontSize: 13)),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => PaywallScreen.open(context, widget.book),
+              icon: const Icon(Icons.lock_open, size: 18),
+              label: const Text('Unlock'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _goToChapter(int index) {
@@ -342,6 +388,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
         ),
       ),
       body: Obx(() {
+        // Paid chapters past the free preview show the lock panel
+        // instead of the text — this one check covers every way a
+        // chapter can be reached (details, continue banner, picker,
+        // next/previous, search).
+        if (!AccessService.canOpenChapter(widget.book, _currentChapter)) {
+          return _lockedBody(context);
+        }
         // Reader page background: white / sepia / dark (settings sheet).
         final bg = _bookCtrl.readerBackground.value;
         final bgColor = bg == 'sepia'

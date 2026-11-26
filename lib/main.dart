@@ -7,6 +7,7 @@ import 'package:book_app/services/book_sync_service.dart';
 import 'package:book_app/core/services/font_service.dart';
 import 'package:book_app/global_controllers/books_ctrl.dart';
 import 'package:book_app/screens/home_screen.dart';
+import 'package:book_app/services/access_service.dart';
 import 'package:book_app/widgets/rounded_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -123,6 +124,7 @@ class WelcomeScreen extends StatelessWidget {
 void _putCtrls() {
   Get.put(FontService());
   Get.put(BookSyncService());
+  Get.put(AccessService());
   Get.put(BookCtrl());
   // Get.put(AppAdsCtrl());  // Disabled
 }

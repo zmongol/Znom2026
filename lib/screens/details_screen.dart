@@ -3,7 +3,9 @@ import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_model.dart';
 import 'package:book_app/screens/image_reading_screen.dart';
+import 'package:book_app/screens/paywall_screen.dart';
 import 'package:book_app/screens/reading_screen.dart';
+import 'package:book_app/services/access_service.dart';
 import 'package:book_app/widgets/book_card.dart';
 import 'package:book_app/widgets/section_header.dart';
 import 'package:flutter/material.dart';
@@ -116,11 +118,19 @@ class DetailsScreen extends StatelessWidget {
                           .mapIndexed(
                             (e, i) => ChapterCard(
                               chapter: e,
+                              locked:
+                                  !AccessService.canOpenChapter(book, i),
                               press: () {
                                 // Image books open the page-image reader;
                                 // text books open the text reader.
                                 if (book.isImageBook) {
                                   ImageReadingScreen.open(context, book);
+                                  return;
+                                }
+                                // Paid chapters past the free preview
+                                // route to the paywall instead.
+                                if (!AccessService.canOpenChapter(book, i)) {
+                                  PaywallScreen.open(context, book);
                                   return;
                                 }
                                 Navigator.push(

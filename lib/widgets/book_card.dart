@@ -4,6 +4,8 @@ import 'package:book_app/Component/MongolFonts.dart';
 import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_model.dart';
+import 'package:book_app/services/access_service.dart';
+import 'package:book_app/services/book_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mongol/mongol.dart';
@@ -115,9 +117,11 @@ class BookCard extends StatelessWidget {
                   // columns beside it always have room).
                   SizedBox(
                     height: 140,
-                    child: AspectRatio(
-                      aspectRatio: 0.71,
-                      child: Container(
+                    child: Stack(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 0.71,
+                          child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
@@ -130,11 +134,49 @@ class BookCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: BookCoverImage(book: book),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: BookCoverImage(book: book),
+                            ),
+                          ),
                         ),
-                      ),
+                        // Tier badge: PRO for the subscription shelf,
+                        // the price for premium books, nothing for free.
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: Obx(() {
+                            if (!Get.isRegistered<AccessService>()) {
+                              return const SizedBox.shrink();
+                            }
+                            final entry = Get.find<AccessService>()
+                                .entryFor(book);
+                            if (entry == null ||
+                                entry.tier == BookTier.free) {
+                              return const SizedBox.shrink();
+                            }
+                            final label = entry.tier == BookTier.pro
+                                ? 'PRO'
+                                : (entry.priceLabel ?? '\$4.99');
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 10),

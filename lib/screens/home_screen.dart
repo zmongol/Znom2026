@@ -2,6 +2,7 @@ import 'package:book_app/core/constants/app_colors.dart';
 import 'package:book_app/core/constants/ui_strings.dart';
 import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/models/books/book_model.dart';
+import 'package:book_app/screens/account_sheet.dart';
 import 'package:book_app/screens/details_screen.dart';
 import 'package:book_app/screens/image_reading_screen.dart';
 import 'package:book_app/screens/reading_screen.dart';
@@ -68,6 +69,11 @@ class HomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (context) => Donation()),
                 ),
+              ),
+              _buildIconButton(
+                context,
+                Icons.person_outline,
+                () => showAccountSheet(context),
               ),
               _buildPopupMenu(context),
             ],

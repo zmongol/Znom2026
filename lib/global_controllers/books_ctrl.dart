@@ -9,6 +9,7 @@ import 'package:book_app/dialogues/show_font_size_sheet.dart';
 import 'package:book_app/extensions/storage_ext.dart';
 import 'package:book_app/functions/load_book_json.dart';
 import 'package:book_app/models/books/book_model.dart';
+import 'package:book_app/services/access_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -203,6 +204,7 @@ class BookCtrl extends GetxService {
         if (book != null && book["items"] != null) {
           final dd = await compute<List<dynamic>, Book>(
               Book.fetch, (book["items"] as List<dynamic>));
+          dd.sourceFile = bookfile.split('/').last;
           if (dd.title.trim().isEmpty) {
             final fallbackTitle =
                 bookfile.split('/').last.replaceAll('.json', '');
@@ -237,6 +239,11 @@ class BookCtrl extends GetxService {
       booksList.assignAll(deduped);
       randombooksList.assignAll(deduped);
       randombooksList.shuffle();
+      // The sync may have delivered a new charging catalogue alongside
+      // the books — pick it up whenever the library reloads.
+      if (Get.isRegistered<AccessService>()) {
+        Get.find<AccessService>().reloadCatalog();
+      }
     } finally {
       _isLoading = false;
       // If a reload was requested while we were loading (e.g. FTP finished),

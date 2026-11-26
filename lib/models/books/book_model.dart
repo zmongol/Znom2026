@@ -20,6 +20,11 @@ class Book {
   double rating;
   List<BookChapter> chapters;
 
+  /// Base name of the server file this book was loaded from
+  /// (e.g. "TonggalagTamir.json") — the charging catalogue keys on it.
+  /// Set by the loader; empty for books built any other way.
+  String sourceFile = '';
+
   /// True when the book is a scanned PDF shown as page images instead of
   /// text chapters (book JSON `"type": "image"`).
   bool isImageBook;
