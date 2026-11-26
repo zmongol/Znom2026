@@ -26,10 +26,10 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath Znom-Windows-1.0.4.zip
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath Znom-Windows-1.0.5.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Znom-Windows-1.0.4
-          path: Znom-Windows-1.0.4.zip
+          name: Znom-Windows-1.0.5
+          path: Znom-Windows-1.0.5.zip
