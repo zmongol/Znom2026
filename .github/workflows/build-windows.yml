@@ -33,3 +33,28 @@ jobs:
         with:
           name: Znom-Windows-1.0.5
           path: Znom-Windows-1.0.5.zip
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $found = $null
+          $cmd = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+          if ($cmd) { $found = $cmd.Source }
+          if (-not $found) {
+            foreach ($c in @("C:\Program Files (x86)\Inno Setup 6\ISCC.exe", "C:\Program Files\Inno Setup 6\ISCC.exe")) {
+              if (Test-Path $c) { $found = $c; break }
+            }
+          }
+          if (-not $found) {
+            choco install innosetup -y --no-progress
+            $found = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          }
+          Write-Host "Using ISCC: $found"
+          & $found windows-installer\Znom.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Znom-Windows-Setup-1.0.5
+          path: dist/Znom-Setup-1.0.5.exe
