@@ -831,7 +831,7 @@ packages:
   zmongol_kit:
     dependency: "direct main"
     description:
-      path: "../zmongol_kit"
+      path: "packages/zmongol_kit"
       relative: true
     source: path
     version: "0.1.0"
