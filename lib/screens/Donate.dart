@@ -301,7 +301,7 @@ class Donation extends StatelessWidget {
                 height: 35,
               ),
               Text(
-                "www.zvvnmod.com",
+                "zmongol.com",
                 style: TextStyle(
                   fontSize: 20,
                   color: AppColors.primary,
@@ -415,7 +415,7 @@ class Donation extends StatelessWidget {
               ),
               SizedBox(height: 5),
               Text(
-                "https://www.zvvnmod.com/#/home",
+                "https://zmongol.com",
                 style: TextStyle(fontFamily: MongolFonts.z52chimegtig),
               ),
               SizedBox(height: 5),
