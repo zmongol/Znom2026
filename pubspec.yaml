@@ -11,7 +11,7 @@ description: A new Flutter project.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.4+12
+version: 1.0.5+13
 publish_to: none
 
 
@@ -43,7 +43,7 @@ dev_dependencies:
 
 # Force compatible native Windows bindings to avoid Dart API breakages in older transitive versions.
 dependency_overrides:
-  win32: ^5.15.0
+  win32: ^6.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
